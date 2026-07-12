@@ -5,6 +5,7 @@ import express from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { errorHandler } from './src/middleware/errorHandler';
+import { rateLimiter } from './src/middleware/rateLimiter';
 import authRoutes from './src/modules/auth/auth.routes';
 import workoutRoutes from './src/modules/workouts/workout.routes';
 import { env } from './src/shared/utils/env';
@@ -16,6 +17,9 @@ app.use(helmet());
 app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
 app.use(morgan('dev'));
 app.use(express.json({ limit: '10kb' }));
+
+// ========== Global Rate Limiter ==========
+app.use(rateLimiter(200, 60_000)); // 200 запросов в минуту
 
 // ========== Routes ==========
 app.use('/api/auth', authRoutes);
