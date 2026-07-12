@@ -1,11 +1,13 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext'; // <-- добавить импорт
 
 /**
- * Навигационная панель с кнопками входа/выхода и ссылками.
+ * Навигационная панель с кнопками входа/выхода, ссылками и переключателем темы.
  */
 const Navbar = () => {
   const { user, logout } = useAuth();
+  const { isDark, toggleTheme } = useTheme(); // <-- добавить деструктуризацию
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -36,6 +38,22 @@ const Navbar = () => {
       </Link>
 
       <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        {/* Переключатель темы */}
+        <button
+          onClick={toggleTheme}
+          style={{
+            background: 'none',
+            border: 'none',
+            fontSize: '1.3rem',
+            cursor: 'pointer',
+            padding: '4px 8px',
+            lineHeight: 1,
+          }}
+          title={isDark ? 'Светлая тема' : 'Тёмная тема'}
+        >
+          {isDark ? '☀️' : '🌙'}
+        </button>
+
         {user ? (
           <>
             <Link to="/history" className="btn btn-secondary" style={{ textDecoration: 'none' }}>
