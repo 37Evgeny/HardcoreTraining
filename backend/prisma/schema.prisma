@@ -13,6 +13,7 @@ model User {
   name      String?
   role      String   @default("USER") // USER | ADMIN
   sessions  WorkoutSession[]
+  favorites Favorite[] 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -27,6 +28,7 @@ model Workout {
   durationMinutes Int
   exercises       Exercise[]
   sessions        WorkoutSession[]
+  favorites       Favorite[] 
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
@@ -59,4 +61,16 @@ model WorkoutSession {
   createdAt  DateTime @default(now())
 
   @@map("workout_sessions")
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workoutId String
+  workout   Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, workoutId])
+  @@map("favorites")
 }

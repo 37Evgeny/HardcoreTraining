@@ -7,6 +7,7 @@ import morgan from 'morgan';
 import { errorHandler } from './src/middleware/errorHandler';
 import { rateLimiter } from './src/middleware/rateLimiter';
 import authRoutes from './src/modules/auth/auth.routes';
+import favoriteRoutes from './src/modules/favorites/favorite.routes';
 import workoutRoutes from './src/modules/workouts/workout.routes';
 import { env } from './src/shared/utils/env';
 
@@ -24,6 +25,7 @@ app.use(rateLimiter(200, 60_000)); // 200 запросов в минуту
 // ========== Routes ==========
 app.use('/api/auth', authRoutes);
 app.use('/api/workouts', workoutRoutes);
+app.use('/api/favorites', favoriteRoutes);
 
 // ========== Health Check ==========
 app.get('/api/health', (_req, res) => {

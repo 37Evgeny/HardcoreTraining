@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import SafetyModal from '../components/SafetyModal/SafetyModal';
 import WorkoutCard from '../components/WorkoutCard/WorkoutCard';
 import WorkoutModal from '../components/WorkoutModal/WorkoutModal';
-import { getWorkouts } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { addFavorite, getFavorites, getWorkouts, removeFavorite } from '../services/api';
 import './HomePage.css';
 
-const LEVELS = ['ALL', 'BEGINNER', 'INTERMEDIATE', 'ADVANCED'];
+const LEVELS = ['ALL', 'BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'FAVORITES'];
 
 const WORKOUT_ICONS = {
   'Основы маха гирей': '🏋️',
@@ -45,43 +46,86 @@ const getIcon = (title) => {
 };
 
 const HomePage = () => {
+  const { user } = useAuth();
   const [workouts, setWorkouts] = useState([]);
+  const [favoriteIds, setFavoriteIds] = useState(new Set());
   const [selectedWorkout, setSelectedWorkout] = useState(null);
   const [showSafety, setShowSafety] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeLevel, setActiveLevel] = useState('ALL');
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
 
-  /**
-   * Загружаем тренировки с сервера с учётом фильтра и пагинации.
-   * Лимит 50 — чтобы все 30 тренировок поместились на одной странице.
-   */
+  // Загружаем тренировки
   useEffect(() => {
     setLoading(true);
     setError(null);
 
-    const params = { limit: 50 };
-    if (activeLevel !== 'ALL') {
-      params.level = activeLevel;
-    }
-
-    getWorkouts(params)
+    getWorkouts({ limit: 50 })
       .then(res => {
         if (res.data.success) {
           setWorkouts(res.data.data);
-          setTotalPages(res.data.pagination?.totalPages || 1);
         } else {
           setError('Ошибка загрузки данных');
         }
       })
       .catch(err => {
         console.error('Ошибка загрузки:', err);
-        setError('Не удалось загрузить тренировки. Проверьте соединение с сервером.');
+        setError('Не удалось загрузить тренировки.');
       })
       .finally(() => setLoading(false));
-  }, [activeLevel, page]);
+  }, []);
+
+  // Загружаем избранное (если пользователь авторизован)
+  useEffect(() => {
+    if (!user) {
+      setFavoriteIds(new Set());
+      return;
+    }
+
+    getFavorites()
+      .then(res => {
+        if (res.data.success) {
+          const ids = new Set(res.data.data.map(w => w.id));
+          setFavoriteIds(ids);
+        }
+      })
+      .catch(err => console.error('Ошибка загрузки избранного:', err));
+  }, [user]);
+
+  // Фильтрация
+  const filteredWorkouts = useMemo(() => {
+    if (activeLevel === 'ALL') return workouts;
+    if (activeLevel === 'FAVORITES') {
+      return workouts.filter(w => favoriteIds.has(w.id));
+    }
+    return workouts.filter(w => w.level === activeLevel);
+  }, [workouts, activeLevel, favoriteIds]);
+
+  // Обработчик избранного
+  const handleToggleFavorite = useCallback(async (workoutId, e) => {
+    e.stopPropagation();
+
+    if (!user) {
+      alert('Войдите в аккаунт, чтобы добавлять тренировки в избранное');
+      return;
+    }
+
+    try {
+      if (favoriteIds.has(workoutId)) {
+        await removeFavorite(workoutId);
+        setFavoriteIds(prev => {
+          const next = new Set(prev);
+          next.delete(workoutId);
+          return next;
+        });
+      } else {
+        await addFavorite(workoutId);
+        setFavoriteIds(prev => new Set(prev).add(workoutId));
+      }
+    } catch (err) {
+      console.error('Ошибка изменения избранного:', err);
+    }
+  }, [user, favoriteIds]);
 
   const handleCardClick = (workout) => {
     setSelectedWorkout(workout);
@@ -100,7 +144,8 @@ const HomePage = () => {
     const map = {
       'BEGINNER': 'Начальный',
       'INTERMEDIATE': 'Средний',
-      'ADVANCED': 'Продвинутый'
+      'ADVANCED': 'Продвинутый',
+      'FAVORITES': '⭐ Избранное',
     };
     return map[level] || level;
   };
@@ -133,88 +178,78 @@ const HomePage = () => {
         <p className="subtitle">Тренировки с гирей для любого уровня</p>
       </header>
 
-      {/* Фильтр по уровню */}
+      {/* Фильтр */}
       <div className="level-filter">
         {LEVELS.map(level => (
           <button
             key={level}
             className={`filter-btn ${activeLevel === level ? 'active' : ''}`}
-            onClick={() => {
-              setActiveLevel(level);
-              setPage(1); // Сбрасываем на первую страницу при смене фильтра
-            }}
+            onClick={() => setActiveLevel(level)}
           >
             {level === 'ALL' ? '🏁 Все' : levelLabel(level)}
           </button>
         ))}
       </div>
 
-      {/* Счётчик тренировок */}
+      {/* Счётчик */}
       <p style={{
         textAlign: 'center',
         color: 'var(--text-tertiary)',
         fontSize: 'var(--text-sm)',
         marginBottom: '20px',
       }}>
-        Найдено тренировок: <strong>{workouts.length}</strong>
+        {activeLevel === 'FAVORITES'
+          ? `⭐ Избранное: ${filteredWorkouts.length} тренировок`
+          : `Найдено тренировок: ${filteredWorkouts.length}`
+        }
       </p>
 
       {/* Сетка карточек */}
       <div className="card-grid">
-        {workouts.length === 0 ? (
-          <p className="empty-message">Нет тренировок для выбранного уровня</p>
+        {filteredWorkouts.length === 0 ? (
+          <p className="empty-message">
+            {activeLevel === 'FAVORITES'
+              ? '⭐ У вас пока нет избранных тренировок. Нажмите на сердечко на карточке, чтобы добавить.'
+              : 'Нет тренировок для выбранного уровня'
+            }
+          </p>
         ) : (
-          workouts.map(w => (
-            <WorkoutCard
-              key={w.id}
-              workout={w}
-              icon={getIcon(w.title)}
-              levelLabel={levelLabel(w.level)}
-              onClick={() => handleCardClick(w)}
-            />
+          filteredWorkouts.map(w => (
+            <div key={w.id} style={{ position: 'relative' }}>
+              <WorkoutCard
+                workout={w}
+                icon={getIcon(w.title)}
+                levelLabel={levelLabel(w.level)}
+                onClick={() => handleCardClick(w)}
+              />
+              {/* Кнопка избранного */}
+              <button
+                onClick={(e) => handleToggleFavorite(w.id, e)}
+                style={{
+                  position: 'absolute',
+                  top: '12px',
+                  right: '12px',
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '1.5rem',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  lineHeight: 1,
+                  transition: 'transform 0.2s ease',
+                  transform: favoriteIds.has(w.id) ? 'scale(1.1)' : 'scale(1)',
+                  filter: favoriteIds.has(w.id) ? 'none' : 'grayscale(1)',
+                  opacity: favoriteIds.has(w.id) ? 1 : 0.5,
+                }}
+                title={favoriteIds.has(w.id) ? 'Удалить из избранного' : 'Добавить в избранное'}
+              >
+                ❤️
+              </button>
+            </div>
           ))
         )}
       </div>
 
-      {/* Пагинация */}
-      {totalPages > 1 && (
-        <div className="pagination" style={{
-          display: 'flex',
-          justifyContent: 'center',
-          gap: '8px',
-          marginTop: '30px',
-          marginBottom: '40px',
-        }}>
-          <button
-            className="btn btn-secondary"
-            disabled={page <= 1}
-            onClick={() => setPage(p => Math.max(1, p - 1))}
-          >
-            ← Назад
-          </button>
-
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-            <button
-              key={p}
-              className={`btn ${page === p ? 'btn-primary' : 'btn-secondary'}`}
-              onClick={() => setPage(p)}
-              style={{ minWidth: '40px' }}
-            >
-              {p}
-            </button>
-          ))}
-
-          <button
-            className="btn btn-secondary"
-            disabled={page >= totalPages}
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-          >
-            Вперед →
-          </button>
-        </div>
-      )}
-
-      {/* Модалка с деталями тренировки */}
+      {/* Модалки */}
       {selectedWorkout && !showSafety && (
         <WorkoutModal
           workout={selectedWorkout}
@@ -225,14 +260,11 @@ const HomePage = () => {
         />
       )}
 
-      {/* Модалка безопасности */}
       {showSafety && (
         <SafetyModal
           workout={selectedWorkout}
           onAccept={handleAcceptSafety}
-          onClose={() => {
-            setShowSafety(false);
-          }}
+          onClose={() => setShowSafety(false)}
         />
       )}
     </div>

@@ -119,4 +119,14 @@ export const finishSession = (sessionId) =>
 export const getHistory = (params) =>
   api.get('/workouts/history', { params });
 
+// ========== Favorites API ==========
+export const getFavorites = () =>
+  api.get('/favorites');
+
+export const addFavorite = (workoutId) =>
+  api.post(`/favorites/${workoutId}`);
+
+export const removeFavorite = (workoutId) =>
+  api.delete(`/favorites/${workoutId}`);
+
 export default api;
