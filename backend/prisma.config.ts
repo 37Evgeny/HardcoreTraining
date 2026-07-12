@@ -1,14 +1,13 @@
-import { config } from 'dotenv';
-import { defineConfig } from 'prisma/config';
-
-// Загружаем .env вручную (Prisma v7 не делает это автоматически)
-config({ path: '.env' });
+import 'dotenv/config'
+import { defineConfig } from 'prisma/config'
 
 export default defineConfig({
-  datasource: {
-    url: process.env.DATABASE_URL!,
-  },
+  earlyAccess: true,
+  schema: './prisma/schema.prisma',
   migrations: {
-    seed: 'ts-node prisma/seed.ts',
+    seed: 'ts-node --compiler-options {"module":"CommonJS"} prisma/seed.ts',
   },
-});
+  datasource: {
+    url: process.env.DATABASE_URL,
+  },
+})

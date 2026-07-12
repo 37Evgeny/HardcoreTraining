@@ -3,9 +3,9 @@ import { authenticate } from '../../middleware/auth.middleware';
 import { validate } from '../../middleware/validate.middleware';
 import * as workoutController from './workout.controller';
 import {
-    finishSessionSchema,
-    getWorkoutsSchema,
-    startSessionSchema,
+  finishSessionSchema,
+  getWorkoutsSchema,
+  startSessionSchema,
 } from './workout.validator';
 
 const router = Router();
@@ -15,6 +15,13 @@ const router = Router();
  * Публичный: список тренировок с фильтрацией и пагинацией.
  */
 router.get('/', validate(getWorkoutsSchema, 'query'), workoutController.getWorkouts);
+
+/**
+ * GET /api/workouts/history
+ * Защищенный: история тренировок пользователя.
+ * ВАЖНО: размещен ДО /:id, чтобы избежать конфликта маршрутов.
+ */
+router.get('/history', authenticate, workoutController.getHistory);
 
 /**
  * GET /api/workouts/:id
@@ -43,11 +50,5 @@ router.put(
   validate(finishSessionSchema, 'params'),
   workoutController.finishSession
 );
-
-/**
- * GET /api/workouts/history
- * Защищенный: история тренировок пользователя.
- */
-router.get('/history', authenticate, workoutController.getHistory);
 
 export default router;
