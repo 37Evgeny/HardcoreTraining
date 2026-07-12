@@ -20,15 +20,19 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   /**
-   * При монтировании проверяем, есть ли сохраненный токен.
+   * При монтировании проверяем, есть ли сохранённый токен.
+   * Если есть — пробуем загрузить данные пользователя.
    */
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
     const savedUser = localStorage.getItem('user');
+
     if (token && savedUser) {
       try {
-        setUser(JSON.parse(savedUser));
+        const parsed = JSON.parse(savedUser);
+        setUser(parsed);
       } catch {
+        // Если данные повреждены — очищаем
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
@@ -38,7 +42,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   /**
-   * Логин: отправляем запрос, сохраняем токены и пользователя.
+   * Логин: отправляем запрос на бэкенд, сохраняем токены и пользователя.
    */
   const login = useCallback(async (email, password) => {
     const response = await apiLogin({ email, password });
@@ -53,7 +57,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   /**
-   * Регистрация: отправляем запрос, сохраняем токены и пользователя.
+   * Регистрация: отправляем запрос на бэкенд, сохраняем токены и пользователя.
    */
   const register = useCallback(async (email, password, name) => {
     const response = await apiRegister({ email, password, name });
@@ -68,7 +72,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   /**
-   * Логаут: очищаем все данные.
+   * Логаут: очищаем все данные и токены.
    */
   const logout = useCallback(() => {
     localStorage.removeItem('accessToken');
