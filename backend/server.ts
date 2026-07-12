@@ -1,24 +1,21 @@
+import 'dotenv/config'; // 👈 ЭТА СТРОКА — загружает .env до всех импортов
+
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import { errorHandler } from './middleware/errorHandler';
-import authRoutes from './modules/auth/auth.routes';
-import workoutRoutes from './modules/workouts/workout.routes';
-import { env } from './shared/utils/env';
+import { errorHandler } from './src/middleware/errorHandler';
+import authRoutes from './src/modules/auth/auth.routes';
+import workoutRoutes from './src/modules/workouts/workout.routes';
+import { env } from './src/shared/utils/env';
 
 const app = express();
 
 // ========== Security & Middleware ==========
 app.use(helmet());
-app.use(
-  cors({
-    origin: env.CORS_ORIGIN,
-    credentials: true,
-  })
-);
+app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
 app.use(morgan('dev'));
-app.use(express.json({ limit: '10kb' })); // ограничение размера тела
+app.use(express.json({ limit: '10kb' }));
 
 // ========== Routes ==========
 app.use('/api/auth', authRoutes);
@@ -35,10 +32,7 @@ app.get('/api/health', (_req, res) => {
 
 // ========== 404 Handler ==========
 app.use((_req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Route not found',
-  });
+  res.status(404).json({ success: false, message: 'Route not found' });
 });
 
 // ========== Error Handling ==========

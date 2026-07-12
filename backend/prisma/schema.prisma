@@ -4,7 +4,20 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // url перенесен в prisma.config.ts
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      String   @default("USER") // USER | ADMIN
+  sessions  WorkoutSession[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
 }
 
 model Workout {
@@ -17,6 +30,8 @@ model Workout {
   sessions        WorkoutSession[]
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
+
+  @@map("workouts")
 }
 
 model Exercise {
@@ -30,14 +45,19 @@ model Exercise {
   workoutId    String
   workout      Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
   createdAt    DateTime @default(now())
+
+  @@map("exercises")
 }
 
 model WorkoutSession {
   id         String   @id @default(uuid())
   userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   workoutId  String
+  workout    Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
   completed  Boolean  @default(false)
   finishedAt DateTime?
-  workout    Workout  @relation(fields: [workoutId], references: [id])
   createdAt  DateTime @default(now())
+
+  @@map("workout_sessions")
 }

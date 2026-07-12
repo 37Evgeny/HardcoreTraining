@@ -1,132 +1,110 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+import { Pool } from 'pg';
 
-const prisma = new PrismaClient()
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 
 async function main() {
-  console.log('🌱 Seeding database with kettlebell complexes...')
+  console.log('🌱 Seeding database...');
 
-  // --- Complex 1: Beginner ---
-  const beginner = await prisma.workout.create({
-    data: {
-      name: 'The Foundation (Beginner)',
-      description: 'Ideal for learning proper form and building a base of strength.',
+  const hashedPassword = await bcrypt.hash('Admin123', 12);
+
+  const admin = await prisma.user.upsert({
+    where: { email: 'admin@hardcoretraining.com' },
+    update: {},
+    create: {
+      email: 'admin@hardcoretraining.com',
+      password: hashedPassword,
+      name: 'Admin',
+      role: 'ADMIN',
+    },
+  });
+
+  const user = await prisma.user.upsert({
+    where: { email: 'user@example.com' },
+    update: {},
+    create: {
+      email: 'user@example.com',
+      password: hashedPassword,
+      name: 'John Doe',
+      role: 'USER',
+    },
+  });
+
+  console.log(`✅ Users created: ${admin.email}, ${user.email}`);
+
+  const foundation = await prisma.workout.upsert({
+    where: { id: 'foundation-beginner-001' },
+    update: {},
+    create: {
+      id: 'foundation-beginner-001',
+      title: 'The Foundation (Beginner)',
+      description: 'A beginner-friendly kettlebell workout focusing on foundational movements.',
       level: 'BEGINNER',
-      durationMinutes: 30,
+      durationMinutes: 25,
       exercises: {
         create: [
-          {
-            name: 'Goblet Squat',
-            sets: 3,
-            reps: 12,
-            restSeconds: 60,
-            instructions: 'Hold the KB at chest height. Squat down keeping your back straight. Drive up through heels.',
-            safetyTip: 'Keep your chest up and don\'t let your knees cave inward.'
-          },
-          {
-            name: 'Two-Handed Swing',
-            sets: 3,
-            reps: 15,
-            restSeconds: 60,
-            instructions: 'Hinge at the hips and swing the bell to eye level. Use your hips, not your arms.',
-            safetyTip: 'Do not use your lower back to swing. Snap your hips forward.'
-          },
-          {
-            name: 'Overhead Press',
-            sets: 3,
-            reps: 10,
-            restSeconds: 60,
-            instructions: 'Press the bell from shoulder to full extension. Squeeze glutes.',
-            safetyTip: 'Don\'t arch your lower back. Keep your core tight.'
-          }
-        ]
-      }
-    }
-  })
+          { name: 'Kettlebell Deadlift', sets: 3, reps: 10, restSeconds: 60, instructions: 'Place kettlebell between feet. Hinge at hips, grip handle, drive through heels.', safetyTip: 'Keep your back neutral.' },
+          { name: 'Goblet Squat', sets: 3, reps: 8, restSeconds: 60, instructions: 'Hold kettlebell at chest level. Squat down keeping chest up.', safetyTip: 'Keep heels on the ground.' },
+          { name: 'Two-Handed Swing', sets: 3, reps: 10, restSeconds: 45, instructions: 'Hold kettlebell with both hands. Hike pass between legs, thrust hips forward.', safetyTip: 'Power comes from hips.' },
+          { name: 'Overhead Press', sets: 3, reps: 5, restSeconds: 60, instructions: 'Clean kettlebell to rack position. Press overhead.', safetyTip: 'Brace core before pressing.' },
+        ],
+      },
+    },
+  });
 
-  // --- Complex 2: Intermediate ---
-  const intermediate = await prisma.workout.create({
-    data: {
-      name: 'The Flow (Intermediate)',
-      description: 'Focus on coordination, endurance, and fluid movement.',
+  const flow = await prisma.workout.upsert({
+    where: { id: 'flow-intermediate-002' },
+    update: {},
+    create: {
+      id: 'flow-intermediate-002',
+      title: 'The Flow (Intermediate)',
+      description: 'An intermediate flow workout combining swings, cleans, and snatches.',
       level: 'INTERMEDIATE',
+      durationMinutes: 35,
+      exercises: {
+        create: [
+          { name: 'Single-Arm Swing', sets: 3, reps: 8, restSeconds: 45, instructions: 'Swing kettlebell with one hand.', safetyTip: 'Keep wrist straight.' },
+          { name: 'Clean', sets: 3, reps: 6, restSeconds: 60, instructions: 'Pull kettlebell from swing into rack.', safetyTip: 'Keep bell close to body.' },
+          { name: 'Front Rack Squat', sets: 3, reps: 6, restSeconds: 60, instructions: 'Hold kettlebell in rack position. Squat down.', safetyTip: 'Keep core tight.' },
+          { name: 'Snatch', sets: 3, reps: 5, restSeconds: 60, instructions: 'Pull kettlebell from swing to overhead.', safetyTip: 'Punch through at the top.' },
+        ],
+      },
+    },
+  });
+
+  const grinder = await prisma.workout.upsert({
+    where: { id: 'grinder-advanced-003' },
+    update: {},
+    create: {
+      id: 'grinder-advanced-003',
+      title: 'The Grinder (Advanced)',
+      description: 'An advanced high-volume workout for experienced kettlebell athletes.',
+      level: 'ADVANCED',
       durationMinutes: 45,
       exercises: {
         create: [
-          {
-            name: 'Turkish Get-Up',
-            sets: 3,
-            reps: 5, // per side
-            restSeconds: 90,
-            instructions: 'Lie on back, press bell up, and stand up while keeping eyes on the bell.',
-            safetyTip: 'Move slowly. If you lose balance, drop the bell, not your form.'
-          },
-          {
-            name: 'Clean and Press',
-            sets: 4,
-            reps: 8, // per side
-            restSeconds: 60,
-            instructions: 'Clean the bell to rack position, then press overhead.',
-            safetyTip: 'Catch the bell on your forearm, not just your wrist.'
-          },
-          {
-            name: 'Snatch',
-            sets: 4,
-            reps: 5, // per side
-            restSeconds: 60,
-            instructions: 'Swing the bell and catch it overhead in one fluid motion.',
-            safetyTip: 'Keep the bell close to your body. Snap hips and pull down with the arm.'
-          }
-        ]
-      }
-    }
-  })
+          { name: 'Turkish Get-Up', sets: 3, reps: 3, restSeconds: 90, instructions: 'Lie down, press kettlebell up. Stand up step by step.', safetyTip: 'Keep eyes on the bell.' },
+          { name: 'Double Clean & Press', sets: 4, reps: 5, restSeconds: 60, instructions: 'Clean two kettlebells to rack. Press both overhead.', safetyTip: 'Keep wrists straight.' },
+          { name: 'Double Front Squat', sets: 4, reps: 5, restSeconds: 60, instructions: 'Two kettlebells in rack position. Squat deep.', safetyTip: 'Keep chest up.' },
+          { name: 'High-Rep Snatch', sets: 3, reps: 15, restSeconds: 90, instructions: 'Snatch kettlebell overhead. Switch hands each rep.', safetyTip: 'Do not sacrifice form.' },
+        ],
+      },
+    },
+  });
 
-  // --- Complex 3: Advanced ---
-  const advanced = await prisma.workout.create({
-    data: {
-      name: 'The Grinder (Advanced)',
-      description: 'High intensity, heavy loads, and mental toughness.',
-      level: 'ADVANCED',
-      durationMinutes: 60,
-      exercises: {
-        create: [
-          {
-            name: 'Long Cycle (Bent Press)',
-            sets: 3,
-            reps: 6, // per side
-            restSeconds: 120,
-            instructions: 'Bend sideways to touch the floor, return to center, press overhead.',
-            safetyTip: 'Keep the arm holding the bell straight. Rotate from the hips.'
-          },
-          {
-            name: 'Windmills',
-            sets: 3,
-            reps: 10, // per side
-            restSeconds: 60,
-            instructions: 'Press bell up, hinge sideways to touch opposite hand to floor.',
-            safetyTip: 'Look at the bell the entire time. Keep the pressing arm vertical.'
-          },
-          {
-            name: 'Pistol Squat (with KB)',
-            sets: 3,
-            reps: 5, // per side
-            restSeconds: 90,
-            instructions: 'Squat on one leg while holding a KB for counterbalance.',
-            safetyTip: 'Use a box for depth assistance if needed. Keep the heel flat.'
-          }
-        ]
-      }
-    }
-  })
+  console.log(`✅ Workouts created: ${foundation.title}, ${flow.title}, ${grinder.title}`);
 
-  console.log(`✅ Seeded ${3} workouts with ${3 * 3} exercises.`)
+  await prisma.workoutSession.create({
+    data: { userId: user.id, workoutId: foundation.id, completed: true, finishedAt: new Date() },
+  });
+
+  console.log(`✅ Test session created for ${user.name}`);
+  console.log('🎉 Seeding complete!');
 }
 
 main()
-  .catch((e) => {
-    console.error('❌ Seeding failed:', e)
-    process.exit(1)
-  })
-  .finally(async () => {
-    await prisma.$disconnect()
-  })
+  .catch((e) => { console.error('❌ Seed error:', e); process.exit(1); })
+  .finally(async () => { await prisma.$disconnect(); await pool.end(); });
