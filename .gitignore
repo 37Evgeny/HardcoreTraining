@@ -33,9 +33,6 @@ build/
 logs/
 *.log
 
-# === Prisma ===
-backend/prisma/migrations/  # если миграции генерируются автоматически
-
 # === Archives ===
 *.zip
 *.tar.gz
