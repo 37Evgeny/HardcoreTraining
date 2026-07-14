@@ -5,7 +5,11 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test": "npm run test --workspaces",
+    "test:backend": "cd backend && npm test",
+    "test:frontend": "cd frontend && npm test",
+    "test:coverage": "npm run test:coverage --workspaces"
   },
   "lint-staged": {
     "backend/**/*.ts": [
