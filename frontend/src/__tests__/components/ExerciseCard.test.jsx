@@ -23,13 +23,13 @@ describe('ExerciseCard Component', () => {
 
   it('should render sets and reps', () => {
     render(<ExerciseCard exercise={mockExercise} />);
-    expect(screen.getByText(/3 sets/i)).toBeInTheDocument();
-    expect(screen.getByText(/15 reps/i)).toBeInTheDocument();
+    expect(screen.getByText(/Подходы: 3/)).toBeInTheDocument();
+    expect(screen.getByText(/Повторения: 15/)).toBeInTheDocument();
   });
 
   it('should render rest time', () => {
     render(<ExerciseCard exercise={mockExercise} />);
-    expect(screen.getByText(/60s rest/i)).toBeInTheDocument();
+    expect(screen.getByText(/Отдых: 60 сек/)).toBeInTheDocument();
   });
 
   it('should render instructions', () => {
@@ -47,7 +47,7 @@ describe('ExerciseCard Component', () => {
   it('should not render safety tip section when not provided', () => {
     const exerciseWithoutTip = { ...mockExercise, safetyTip: undefined };
     render(<ExerciseCard exercise={exerciseWithoutTip} />);
-    expect(screen.queryByText(/Safety Tip/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/⚠️/i)).not.toBeInTheDocument();
   });
 
   it('should handle missing optional fields gracefully', () => {
@@ -60,6 +60,6 @@ describe('ExerciseCard Component', () => {
     };
     render(<ExerciseCard exercise={minimalExercise} />);
     expect(screen.getByText('Press')).toBeInTheDocument();
-    expect(screen.getByText(/90s rest/i)).toBeInTheDocument();
+    expect(screen.getByText(/Отдых: 90 сек/)).toBeInTheDocument();
   });
 });

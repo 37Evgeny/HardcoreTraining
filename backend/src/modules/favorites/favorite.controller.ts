@@ -1,14 +1,19 @@
-import { NextFunction, Request, Response } from 'express';
+import { NextFunction, Response } from 'express';
 import { AppError } from '../../middleware/errorHandler';
+import { AuthenticatedRequest } from '../../shared/types';
 import * as favoriteService from './favorite.service';
 
 /**
  * GET /api/favorites
  * Возвращает список избранных тренировок текущего пользователя.
  */
-export const getFavorites = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const getFavorites = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
-    const userId = req.user!.id;
+    const userId = req.user!.userId;
     const favorites = await favoriteService.getFavorites(userId);
 
     res.status(200).json({
@@ -24,9 +29,13 @@ export const getFavorites = async (req: Request, res: Response, next: NextFuncti
  * POST /api/favorites/:workoutId
  * Добавляет тренировку в избранное.
  */
-export const addFavorite = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const addFavorite = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
-    const userId = req.user!.id;
+    const userId = req.user!.userId;
     const { workoutId } = req.params;
 
     if (!workoutId) {
@@ -49,9 +58,13 @@ export const addFavorite = async (req: Request, res: Response, next: NextFunctio
  * DELETE /api/favorites/:workoutId
  * Удаляет тренировку из избранного.
  */
-export const removeFavorite = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const removeFavorite = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
-    const userId = req.user!.id;
+    const userId = req.user!.userId;
     const { workoutId } = req.params;
 
     if (!workoutId) {

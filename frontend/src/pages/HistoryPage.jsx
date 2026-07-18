@@ -1,10 +1,10 @@
+// frontend/src/pages/HistoryPage.jsx
+// Страница истории завершённых тренировок пользователя.
+
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getHistory } from '../services/api';
 
-/**
- * Страница истории завершённых тренировок пользователя.
- */
 const HistoryPage = () => {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,7 +20,8 @@ const HistoryPage = () => {
       .then((res) => {
         if (res.data.success) {
           setSessions(res.data.data);
-          setTotalPages(res.data.pagination?.totalPages || 1);
+          // ✅ Исправлено: API возвращает meta, а не pagination
+          setTotalPages(res.data.meta?.totalPages || 1);
         } else {
           setError('Ошибка загрузки истории');
         }
