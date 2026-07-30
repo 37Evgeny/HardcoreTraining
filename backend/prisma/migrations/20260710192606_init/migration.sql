@@ -51,6 +51,8 @@ CREATE TABLE "workout_sessions" (
     CONSTRAINT "workout_sessions_pkey" PRIMARY KEY ("id")
 );
 
+
+
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 

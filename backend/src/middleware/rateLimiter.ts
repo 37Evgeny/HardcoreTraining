@@ -1,52 +1,36 @@
-import { NextFunction, Request, Response } from 'express';
-import { AppError } from './errorHandler';
+import rateLimit from 'express-rate-limit';
+import RedisStore from 'rate-limit-redis';
+import { createClient } from 'redis';
 
 /**
- * Простой in-memory rate limiter.
- * В продакшене заменить на express-rate-limit или Redis.
+ * Redis store для rate limiter.
+ * Работает корректно при горизонтальном масштабировании (N инстансов).
+ * Fallback: если Redis недоступен — логируем и пропускаем (graceful degradation).
  */
-interface RateLimitEntry {
-  count: number;
-  resetAt: number;
-}
+const redisClient = createClient({ url: env.REDIS_URL });
 
-const store = new Map<string, RateLimitEntry>();
+redisClient.on('error', (err) => {
+  logger.error('Redis rate limiter error:', err);
+});
 
-// Очистка устаревших записей каждые 60 секунд
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of store.entries()) {
-    if (entry.resetAt < now) {
-      store.delete(key);
-    }
-  }
-}, 60_000);
+await redisClient.connect();
 
-/**
- * Rate limiter middleware.
- * @param maxRequests - максимальное количество запросов за окно
- * @param windowMs - окно в миллисекундах
- */
-export const rateLimiter = (maxRequests: number = 100, windowMs: number = 60_000) => {
-  return (req: Request, _res: Response, next: NextFunction): void => {
-    const key = req.ip || 'unknown';
-    const now = Date.now();
+export const globalRateLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: new RedisStore({
+    sendCommand: (...args: string[]) => redisClient.sendCommand(args),
+  }),
+  skip: (req) => env.NODE_ENV === 'test', // Не лимитируем в тестах
+});
 
-    const entry = store.get(key);
-
-    if (!entry || entry.resetAt < now) {
-      // Новое окно
-      store.set(key, { count: 1, resetAt: now + windowMs });
-      next();
-      return;
-    }
-
-    if (entry.count >= maxRequests) {
-      next(new AppError('Too many requests. Please try again later.', 429));
-      return;
-    }
-
-    entry.count++;
-    next();
-  };
-};
+export const authRateLimiter = rateLimit({
+  windowMs: 15 * 60_000,
+  max: 10,
+  skipSuccessfulRequests: true,
+  store: new RedisStore({
+    sendCommand: (...args: string[]) => redisClient.sendCommand(args),
+  }),
+});

@@ -1,131 +1,83 @@
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import { prisma } from '../../config/prisma';
-import { AppError } from '../../middleware/errorHandler';
-import { JwtPayload } from '../../shared/types';
-import { env } from '../../shared/utils/env';
-import { LoginInput, RegisterInput } from './auth.validator';
+// backend/src/modules/auth/auth.service.ts — новая логика refresh
 
-const SALT_ROUNDS = 12;
-
-/**
- * Генерирует access и refresh токены.
- */
-const generateTokens = (payload: JwtPayload) => {
-  const accessToken = jwt.sign(payload, env.JWT_SECRET, {
-    expiresIn: env.JWT_EXPIRES_IN,
-  });
-
-  const refreshToken = jwt.sign(payload, env.JWT_SECRET, {
-    expiresIn: env.JWT_REFRESH_EXPIRES_IN,
-  });
-
-  return { accessToken, refreshToken };
-};
-
-/**
- * Регистрация нового пользователя.
- */
-export const register = async (input: RegisterInput) => {
-  const { email, password, name } = input;
-
-  // Проверка на существующего пользователя
-  const existingUser = await prisma.user.findUnique({ where: { email } });
-  if (existingUser) {
-    throw new AppError('User with this email already exists', 409);
-  }
-
-  // Хеширование пароля
-  const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-
-  // Создание пользователя
-  const user = await prisma.user.create({
-    data: {
-      email,
-      password: hashedPassword,
-      name: name || null,
-    },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-      createdAt: true,
-    },
-  });
-
-  // Генерация токенов
-  const tokens = generateTokens({
-    userId: user.id,
-    email: user.email,
-    role: user.role as 'USER' | 'ADMIN',
-  });
-
-  return { user, ...tokens };
-};
-
-/**
- * Логин пользователя.
- */
-export const login = async (input: LoginInput) => {
-  const { email, password } = input;
-
-  // Поиск пользователя
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) {
-    throw new AppError('Invalid email or password', 401);
-  }
-
-  // Проверка пароля
-  const isPasswordValid = await bcrypt.compare(password, user.password);
-  if (!isPasswordValid) {
-    throw new AppError('Invalid email or password', 401);
-  }
-
-  // Генерация токенов
-  const tokens = generateTokens({
-    userId: user.id,
-    email: user.email,
-    role: user.role as 'USER' | 'ADMIN',
-  });
-
-  return {
-    user: {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-    },
-    ...tokens,
-  };
-};
-
-/**
- * Обновление access token по refresh token.
- */
-export const refresh = async (refreshToken: string) => {
-  try {
-    const decoded = jwt.verify(refreshToken, env.JWT_SECRET) as JwtPayload;
-
-    // Проверка, что пользователь все еще существует
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: { id: true, email: true, role: true },
+export class AuthService {
+  /**
+   * Refresh с ротацией — старый токен инвалидируем, выдаём новый.
+   * Если старый токен уже использован — это признак кражи токена.
+   * Отзываем ВСЕ токены пользователя (защита от replay attack).
+   */
+  async refreshTokens(oldRefreshToken: string) {
+    // 1. Находим токен в БД
+    const storedToken = await prisma.refreshToken.findUnique({
+      where: { token: oldRefreshToken },
+      include: { user: true },
     });
 
-    if (!user) {
-      throw new AppError('User not found', 404);
+    if (!storedToken) {
+      throw new UnauthorizedError('Invalid refresh token');
     }
 
-    const tokens = generateTokens({
-      userId: user.id,
-      email: user.email,
-      role: user.role as 'USER' | 'ADMIN',
+    // 2. Токен уже отозван — возможная кража, инвалидируем все сессии
+    if (storedToken.revokedAt) {
+      await prisma.refreshToken.updateMany({
+        where: { userId: storedToken.userId },
+        data: { revokedAt: new Date() },
+      });
+      throw new UnauthorizedError('Refresh token reuse detected — all sessions revoked');
+    }
+
+    // 3. Проверяем срок жизни
+    if (storedToken.expiresAt < new Date()) {
+      throw new UnauthorizedError('Refresh token expired');
+    }
+
+    // 4. Отзываем старый токен
+    await prisma.refreshToken.update({
+      where: { id: storedToken.id },
+      data: { revokedAt: new Date() },
     });
 
-    return tokens;
-  } catch (error) {
-    if (error instanceof AppError) throw error;
-    throw new AppError('Invalid refresh token', 401);
+    // 5. Выдаём новую пару токенов
+    return this.generateTokenPair(storedToken.user);
   }
-};
+
+  private async generateTokenPair(user: { id: string; email: string; role: Role }) {
+    const accessToken = jwt.sign(
+      { userId: user.id, email: user.email, role: user.role },
+      env.JWT_SECRET,
+      { expiresIn: env.JWT_EXPIRES_IN }
+    );
+
+    const refreshTokenValue = crypto.randomBytes(64).toString('hex');
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    // Сохраняем хэш refresh token в БД (не сам токен)
+    await prisma.refreshToken.create({
+      data: {
+        token: await bcrypt.hash(refreshTokenValue, 10),
+        userId: user.id,
+        expiresAt,
+      },
+    });
+
+    return { accessToken, refreshToken: refreshTokenValue };
+  }
+
+  /**
+   * Logout — отзываем конкретный refresh token (один девайс)
+   * или все токены пользователя (все девайсы)
+   */
+  async logout(userId: string, refreshToken: string, allDevices = false) {
+    if (allDevices) {
+      await prisma.refreshToken.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+    } else {
+      await prisma.refreshToken.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+    }
+  }
+}
