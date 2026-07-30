@@ -1,111 +1,99 @@
 // frontend/src/__tests__/pages/HomePage.test.jsx
-// Интеграционный тест для HomePage
-
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AuthContext } from '../../context/AuthContext';
+import { describe, expect, it, vi } from 'vitest';
 import HomePage from '../../pages/HomePage';
 
-// Мокаем API функции
-vi.mock('../../services/api', () => ({
-  getWorkouts: vi.fn(),
-  getFavorites: vi.fn(),
-  addFavorite: vi.fn(),
-  removeFavorite: vi.fn(),
+vi.mock('../../context/AuthContext', () => ({
+  useAuth: vi.fn(),
 }));
 
+vi.mock('../../services/api', () => ({
+  workoutsApi: {
+    getAll: vi.fn(),
+    toggleFavorite: vi.fn(),
+  },
+}));
+
+import { useAuth } from '../../context/AuthContext';
+import { workoutsApi } from '../../services/api';
+
+const renderHomePage = () => {
+  return render(<BrowserRouter><HomePage /></BrowserRouter>);
+};
+
+const mockWorkouts = Array.from({ length: 6 }, (_, i) => ({
+  id: `w-${i}`,
+  title: `Workout ${i}`,
+  level: i < 3 ? 'BEGINNER' : 'INTERMEDIATE',
+  description: `Description ${i}`,
+  exercises: [{ id: `e-${i}-1`, name: `Exercise ${i}`, sets: 3, reps: 10 }],
+  createdAt: new Date(2024, 0, i + 1).toISOString(),
+}));
+
+const mockResponse = {
+  data: mockWorkouts,
+  meta: { total: 6, page: 1, limit: 10, totalPages: 1 },
+};
+
 describe('HomePage', () => {
-  const mockWorkouts = [
-    {
-      id: '1',
-      title: 'Beginner Full Body',
-      level: 'BEGINNER',
-      durationMinutes: 30,
-      exercises: [],
-    },
-    {
-      id: '2',
-      title: 'Intermediate Strength',
-      level: 'INTERMEDIATE',
-      durationMinutes: 45,
-      exercises: [],
-    },
-  ];
-
-  const mockAuthContext = {
-    user: { id: '1', email: 'test@test.com', name: 'Test', role: 'USER' },
-    isLoading: false,
-    login: vi.fn(),
-    register: vi.fn(),
-    logout: vi.fn(),
-  };
-
   beforeEach(() => {
     vi.clearAllMocks();
+    useAuth.mockReturnValue({ user: { id: 'user-1' } });
   });
 
-  const renderHomePage = () => {
-    return render(
-      <BrowserRouter>
-        <AuthContext.Provider value={mockAuthContext}>
-          <HomePage />
-        </AuthContext.Provider>
-      </BrowserRouter>,
-    );
-  };
-
-  it('should show loading state initially', () => {
-    const { getWorkouts } = require('../../services/api');
-    getWorkouts.mockImplementation(() => new Promise(() => {}));
+  it('должен отображать состояние загрузки', () => {
+    workoutsApi.getAll.mockReturnValue(new Promise(() => {}));
     renderHomePage();
-    expect(screen.getByText(/Загрузка/i)).toBeInTheDocument();
+    expect(screen.getByText(/загрузка/i)).toBeInTheDocument();
   });
 
-  it('should render workouts after loading', async () => {
-    const { getWorkouts } = require('../../services/api');
-    getWorkouts.mockResolvedValue({ data: { success: true, data: mockWorkouts } });
+  it('должен отображать список тренировок после загрузки', async () => {
+    workoutsApi.getAll.mockResolvedValue(mockResponse);
     renderHomePage();
-
     await waitFor(() => {
-      expect(screen.getByText('Beginner Full Body')).toBeInTheDocument();
-      expect(screen.getByText('Intermediate Strength')).toBeInTheDocument();
+      expect(screen.getByText('Workout 0')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Workout 1')).toBeInTheDocument();
+    expect(screen.getByText('Workout 5')).toBeInTheDocument();
+  });
+
+  it('должен отображать сообщение, если тренировок нет', async () => {
+    workoutsApi.getAll.mockResolvedValue({
+      data: [],
+      meta: { total: 0, page: 1, limit: 10, totalPages: 0 },
+    });
+    renderHomePage();
+    await waitFor(() => {
+      expect(screen.getByText(/нет тренировок/i)).toBeInTheDocument();
     });
   });
 
-  it('should show error state on API failure', async () => {
-    const { getWorkouts } = require('../../services/api');
-    getWorkouts.mockRejectedValue(new Error('Network Error'));
+  it('должен отображать ошибку при неудачной загрузке', async () => {
+    workoutsApi.getAll.mockRejectedValue(new Error('Network Error'));
     renderHomePage();
-
     await waitFor(() => {
-      expect(screen.getByText(/Ошибка/i)).toBeInTheDocument();
+      expect(screen.getByText(/ошибка/i)).toBeInTheDocument();
     });
   });
 
-  it('should filter workouts by level', async () => {
-    const { getWorkouts } = require('../../services/api');
-    getWorkouts.mockResolvedValue({ data: { success: true, data: mockWorkouts } });
+  it('должен фильтровать тренировки по уровню', async () => {
+    const user = userEvent.setup();
+    workoutsApi.getAll.mockResolvedValue(mockResponse);
     renderHomePage();
 
     await waitFor(() => {
-      expect(screen.getByText('Beginner Full Body')).toBeInTheDocument();
+      expect(screen.getByText('Workout 0')).toBeInTheDocument();
     });
 
-    const filterButton = screen.getByRole('button', { name: /Начальный/i });
-    fireEvent.click(filterButton);
-
-    expect(screen.getByText('Beginner Full Body')).toBeInTheDocument();
-    expect(screen.queryByText('Intermediate Strength')).not.toBeInTheDocument();
-  });
-
-  it('should show empty state when no workouts match filter', async () => {
-    const { getWorkouts } = require('../../services/api');
-    getWorkouts.mockResolvedValue({ data: { success: true, data: [] } });
-    renderHomePage();
+    const filterButton = screen.getByRole('button', { name: /beginner/i });
+    await user.click(filterButton);
 
     await waitFor(() => {
-      expect(screen.getByText(/Нет тренировок/i)).toBeInTheDocument();
+      expect(workoutsApi.getAll).toHaveBeenCalledWith(
+        expect.objectContaining({ level: 'BEGINNER' })
+      );
     });
   });
 });

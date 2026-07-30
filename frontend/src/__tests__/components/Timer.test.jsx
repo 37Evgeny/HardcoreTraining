@@ -1,103 +1,65 @@
-/**
- * Timer Component Tests
- * 
- * Тестирует:
- * - Рендеринг с начальным временем
- * - Запуск и паузу таймера
- * - Вызов onComplete при завершении
- * - Сброс таймера
- */
+// frontend/src/__tests__/components/Timer.test.jsx
 import { fireEvent, render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import Timer from '../../components/Timer';
 
 describe('Timer Component', () => {
-  // Сбрасываем fake timers перед каждым тестом
   beforeEach(() => {
     vi.useFakeTimers();
   });
 
-  it('должен отображать начальное время в формате MM:SS', () => {
+  it('должен отображать начальное время', () => {
     render(<Timer durationSeconds={60} />);
-    
-    // Проверяем, что отображается "01:00"
-    expect(screen.getByText('01:00')).toBeInTheDocument();
+    expect(screen.getByLabelText('01:00 remaining')).toBeInTheDocument();
   });
 
-  it('должен запускать отсчёт при нажатии на кнопку "Старт"', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+  it('должен запускать отсчёт при нажатии на кнопку "Старт"', () => {
     render(<Timer durationSeconds={10} />);
 
-    // Нажимаем кнопку старта
-    const startButton = screen.getByRole('button', { name: /старт/i });
-    await user.click(startButton);
-
-    // Проматываем 5 секунд
+    fireEvent.click(screen.getByRole('button', { name: /start timer/i }));
     vi.advanceTimersByTime(5000);
-    
-    // Проверяем, что отображается "00:05"
-    expect(screen.getByText('00:05')).toBeInTheDocument();
+
+    expect(screen.getByLabelText('00:05 remaining')).toBeInTheDocument();
   });
 
-  it('должен ставить таймер на паузу при нажатии на "Пауза"', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+  it('должен ставить таймер на паузу при нажатии на "Пауза"', () => {
     render(<Timer durationSeconds={10} />);
 
-    // Запускаем таймер
-    await user.click(screen.getByRole('button', { name: /старт/i }));
-    
-    // Проматываем 3 секунды
+    fireEvent.click(screen.getByRole('button', { name: /start timer/i }));
     vi.advanceTimersByTime(3000);
 
-    // Ставим на паузу
-    await user.click(screen.getByRole('button', { name: /пауза/i }));
-    
-    // Проматываем ещё 3 секунды (таймер не должен измениться)
+    fireEvent.click(screen.getByRole('button', { name: /pause timer/i }));
     vi.advanceTimersByTime(3000);
 
-    // Проверяем, что время осталось 7 секунд (а не 4)
-    expect(screen.getByText('00:07')).toBeInTheDocument();
+    expect(screen.getByLabelText('00:07 remaining')).toBeInTheDocument();
   });
 
   it('должен вызывать onComplete при достижении нуля', () => {
     const onComplete = vi.fn();
     render(<Timer durationSeconds={3} onComplete={onComplete} />);
 
-    // Запускаем таймер
-    fireEvent.click(screen.getByRole('button', { name: /старт/i }));
-    
-    // Проматываем 3 секунды
+    fireEvent.click(screen.getByRole('button', { name: /start timer/i }));
     vi.advanceTimersByTime(3000);
 
-    // Проверяем, что onComplete был вызван ровно 1 раз
     expect(onComplete).toHaveBeenCalledTimes(1);
   });
 
-  it('должен сбрасывать таймер при нажатии на "Сброс"', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+  it('должен сбрасывать таймер при нажатии на "Сброс"', () => {
     render(<Timer durationSeconds={60} />);
 
-    // Запускаем таймер
-    fireEvent.click(screen.getByRole('button', { name: /старт/i }));
-    
-    // Проматываем 10 секунд
+    fireEvent.click(screen.getByRole('button', { name: /start timer/i }));
     vi.advanceTimersByTime(10000);
 
-    // Нажимаем сброс
-    await user.click(screen.getByRole('button', { name: /сброс/i }));
-    
-    // Проверяем, что время вернулось к "01:00"
-    expect(screen.getByText('01:00')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /reset timer/i }));
+
+    expect(screen.getByLabelText('01:00 remaining')).toBeInTheDocument();
   });
 
   it('должен автоматически запускаться при autoStart=true', () => {
     render(<Timer durationSeconds={5} autoStart={true} />);
-    
-    // Проматываем 2 секунды
+
     vi.advanceTimersByTime(2000);
-    
-    // Проверяем, что время изменилось (таймер работает)
-    expect(screen.getByText('00:03')).toBeInTheDocument();
+
+    expect(screen.getByLabelText('00:03 remaining')).toBeInTheDocument();
   });
 });

@@ -59,9 +59,9 @@ export const getWorkoutById = async (id: string) => {
   return workout;
 };
 
-/**
- * Начало новой тренировочной сессии.
- */
+// В файле backend/src/modules/workouts/workout.service.ts
+// Функция startSession — добавить проверку активной сессии
+
 export const startSession = async (
   input: StartSessionInput,
   userId: string
@@ -76,6 +76,22 @@ export const startSession = async (
   if (!workout) {
     throw new AppError('Workout not found', 404);
   }
+
+  // ====== ДОБАВЛЕНО: Проверка активной сессии ======
+  const activeSession = await prisma.workoutSession.findFirst({
+    where: {
+      userId,
+      completed: false,
+    },
+  });
+
+  if (activeSession) {
+    throw new AppError(
+      'У вас уже есть активная тренировка. Завершите её перед началом новой.',
+      409
+    );
+  }
+  // =================================================
 
   // Создание сессии
   const session = await prisma.workoutSession.create({

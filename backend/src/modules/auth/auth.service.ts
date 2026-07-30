@@ -264,15 +264,11 @@ export const logout = async (userId: string, allDevices = false) => {
  */
 async function generateTokenPair(payload: TokenPayload): Promise<AuthTokens> {
   // Access token (короткоживущий, 15 минут по умолчанию)
-  const accessToken = jwt.sign(
-    { 
-      userId: payload.userId, 
-      email: payload.email, 
-      role: payload.role 
-    },
-    env.JWT_SECRET,
-    { expiresIn: env.JWT_EXPIRES_IN }
-  );
+const accessToken = jwt.sign(
+  { userId: payload.userId, email: payload.email, role: payload.role },
+  env.JWT_SECRET,
+  { expiresIn: env.JWT_EXPIRES_IN } as jwt.SignOptions // <-- приведение всего объекта
+);
 
   // Refresh token (длинноживущий, 7 дней по умолчанию)
   // Используем криптостойкий генератор случайных чисел

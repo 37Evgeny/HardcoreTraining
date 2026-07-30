@@ -237,6 +237,7 @@ export class PrismaWorkoutsRepository implements IWorkoutsRepository {
 export class MockWorkoutsRepository implements IWorkoutsRepository {
   private workouts: any[] = [];
   private sessions: any[] = [];
+  private sessionCounter = 0;
 
   /**
    * Заполнение тестовыми данными.
@@ -299,8 +300,10 @@ export class MockWorkoutsRepository implements IWorkoutsRepository {
     if (active) {
       throw new AppError('Активная сессия уже существует', 409);
     }
+    
+    this.sessionCounter++; // <-- ИСПРАВЛЕНО: используем счётчик вместо Date.now()
     const session = { 
-      id: `session-${Date.now()}`, 
+      id: `session-${this.sessionCounter}`, 
       userId, 
       workoutId, 
       completed: false,
