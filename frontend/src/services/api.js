@@ -100,9 +100,6 @@ export const register = (data) =>
 export const login = (data) =>
   api.post('/auth/login', data);
 
-export const refreshToken = (refreshToken) =>
-  api.post('/auth/refresh', { refreshToken });
-
 // ========== Workouts API ==========
 export const getWorkouts = (params) =>
   api.get('/workouts', { params });
