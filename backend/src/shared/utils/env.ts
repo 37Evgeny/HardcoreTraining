@@ -13,6 +13,9 @@ const envSchema = z.object({
   JWT_REFRESH_EXPIRES_IN: z.string().default('15d'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   CORS_ORIGIN: z.string().default('http://localhost:3000'),
+  LOG_LEVEL: z
+  .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
+  .default('info'),
 });
 
 /**

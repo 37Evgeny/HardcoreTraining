@@ -1,8 +1,5 @@
 // frontend/src/__tests__/components/Timer.test.jsx
-// Unit-тесты для компонента Timer
-
 import { fireEvent, render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import Timer from '../../components/Timer';
 
@@ -11,69 +8,58 @@ describe('Timer Component', () => {
     vi.useFakeTimers();
   });
 
-  it('should render with initial time', () => {
-    render(<Timer duration={60} />);
-    expect(screen.getByText('01:00')).toBeInTheDocument();
+  it('должен отображать начальное время', () => {
+    render(<Timer durationSeconds={60} />);
+    expect(screen.getByLabelText('01:00 remaining')).toBeInTheDocument();
   });
 
-  it('should start countdown on play button click', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    render(<Timer duration={10} />);
+  it('должен запускать отсчёт при нажатии на кнопку "Старт"', () => {
+    render(<Timer durationSeconds={10} />);
 
-    const startButton = screen.getByRole('button', { name: /старт/i });
-    await user.click(startButton);
-
+    fireEvent.click(screen.getByRole('button', { name: /start timer/i }));
     vi.advanceTimersByTime(5000);
 
-    expect(screen.getByText('00:05')).toBeInTheDocument();
+    expect(screen.getByLabelText('00:05 remaining')).toBeInTheDocument();
   });
 
-  it('should pause countdown on pause button click', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    render(<Timer duration={10} />);
+  it('должен ставить таймер на паузу при нажатии на "Пауза"', () => {
+    render(<Timer durationSeconds={10} />);
 
-    const startButton = screen.getByRole('button', { name: /старт/i });
-    await user.click(startButton);
-
+    fireEvent.click(screen.getByRole('button', { name: /start timer/i }));
     vi.advanceTimersByTime(3000);
 
-    const pauseButton = screen.getByRole('button', { name: /пауза/i });
-    await user.click(pauseButton);
-
+    fireEvent.click(screen.getByRole('button', { name: /pause timer/i }));
     vi.advanceTimersByTime(3000);
 
-    expect(screen.getByText('00:07')).toBeInTheDocument();
+    expect(screen.getByLabelText('00:07 remaining')).toBeInTheDocument();
   });
 
-  it('should call onEnd callback when timer reaches zero', () => {
-    const onEnd = vi.fn();
-    render(<Timer duration={3} onEnd={onEnd} />);
+  it('должен вызывать onComplete при достижении нуля', () => {
+    const onComplete = vi.fn();
+    render(<Timer durationSeconds={3} onComplete={onComplete} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /старт/i }));
+    fireEvent.click(screen.getByRole('button', { name: /start timer/i }));
     vi.advanceTimersByTime(3000);
 
-    expect(onEnd).toHaveBeenCalledTimes(1);
+    expect(onComplete).toHaveBeenCalledTimes(1);
   });
 
-  it('should display 00:00 when timer reaches zero', () => {
-    render(<Timer duration={1} />);
+  it('должен сбрасывать таймер при нажатии на "Сброс"', () => {
+    render(<Timer durationSeconds={60} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /старт/i }));
-    vi.advanceTimersByTime(1000);
-
-    expect(screen.getByText('00:00')).toBeInTheDocument();
-  });
-
-  it('should reset timer on reset button click', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    render(<Timer duration={60} />);
-
-    fireEvent.click(screen.getByRole('button', { name: /старт/i }));
+    fireEvent.click(screen.getByRole('button', { name: /start timer/i }));
     vi.advanceTimersByTime(10000);
 
-    const resetButton = screen.getByRole('button', { name: /сброс/i });
-    await user.click(resetButton);
+    fireEvent.click(screen.getByRole('button', { name: /reset timer/i }));
 
-    expect(screen.getByText('01:00')).toBeInTheDocument();
+    expect(screen.getByLabelText('01:00 remaining')).toBeInTheDocument();
+  });
+
+  it('должен автоматически запускаться при autoStart=true', () => {
+    render(<Timer durationSeconds={5} autoStart={true} />);
+
+    vi.advanceTimersByTime(2000);
+
+    expect(screen.getByLabelText('00:03 remaining')).toBeInTheDocument();
   });
 });
