@@ -1,196 +1,197 @@
+/* ============================================================
+   Стили модального окна тренировки (WorkoutModal)
+   Адаптивность: на мобильных прижимается к низу
+   ============================================================ */
+
+/* Оверлей */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: var(--bg-overlay);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: var(--color-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 20px;
+  padding: 1rem;
   animation: fadeIn 0.2s ease;
-  overflow-y: auto;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.workout-modal {
-  background: var(--bg-secondary);
-  border-radius: var(--radius-xl);
-  max-width: 680px;
+/* Контент модалки */
+.modal-content {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  max-width: 600px;
   width: 100%;
-  max-height: 90vh;
+  max-height: 85vh;
   overflow-y: auto;
-  position: relative;
-  padding: 40px;
-  border: 1px solid var(--border-default);
+  animation: slideUp 0.3s ease;
   box-shadow: var(--shadow-lg);
-  animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px) scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+/* Заголовок модалки */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 1.5rem 1.5rem 0;
+  gap: 1rem;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  flex: 1;
 }
 
 .modal-close-btn {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-secondary);
-  font-size: 1.2rem;
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 1.5rem;
   cursor: pointer;
-  padding: 8px 12px;
-  border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  padding: 0.25rem;
   line-height: 1;
+  transition: color var(--transition-fast);
+  flex-shrink: 0;
 }
 
 .modal-close-btn:hover {
-  background: var(--bg-card-hover);
-  color: var(--text-primary);
-  border-color: var(--border-hover);
+  color: var(--color-danger);
 }
 
-.modal-header {
-  display: flex;
-  gap: 24px;
-  align-items: flex-start;
-  margin-bottom: 24px;
-}
-
-.modal-icon {
-  font-size: 4rem;
-  line-height: 1;
-  flex-shrink: 0;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
-}
-
-.modal-header-info h2 {
-  margin: 0 0 12px;
-  font-size: var(--text-2xl);
-  font-weight: 700;
-}
-
-.modal-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: center;
-}
-
-.modal-level {
-  font-weight: 600;
-  font-size: var(--text-sm);
-}
-
-.modal-meta span:not(.modal-level) {
-  color: var(--text-tertiary);
-  font-size: var(--text-sm);
+/* Тело модалки */
+.modal-body {
+  padding: 1.5rem;
 }
 
 .modal-description {
-  color: var(--text-secondary);
-  line-height: 1.8;
-  margin-bottom: 28px;
-  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
 }
 
-.modal-exercises h3 {
-  margin: 0 0 16px;
-  font-size: var(--text-xl);
-  font-weight: 600;
-}
-
-.modal-exercises-list {
+/* Список упражнений */
+.modal-exercises {
+  list-style: none;
+  padding: 0;
+  margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 28px;
+  gap: 0.75rem;
 }
 
 .modal-exercise-item {
   display: flex;
-  gap: 12px;
-  align-items: flex-start;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-bg-secondary);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--color-border);
 }
 
 .modal-exercise-number {
-  background: var(--accent-red);
-  color: #fff;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
+  background: var(--color-primary);
+  color: var(--color-white);
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 0.8rem;
   font-weight: 700;
-  font-size: var(--text-sm);
   flex-shrink: 0;
-  margin-top: 4px;
-  box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
 }
 
-.modal-exercise-item .card {
+.modal-exercise-info {
   flex: 1;
-  margin: 0;
 }
 
-.modal-start-btn {
-  width: 100%;
-  padding: 16px;
-  font-size: var(--text-lg);
-  font-weight: 700;
-  border-radius: var(--radius-md);
+.modal-exercise-name {
+  font-weight: 600;
+  font-size: 0.95rem;
 }
 
-/* Modal scrollbar */
-.workout-modal::-webkit-scrollbar {
-  width: 6px;
+.modal-exercise-details {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
 }
 
-.workout-modal::-webkit-scrollbar-track {
-  background: transparent;
+/* Футер модалки */
+.modal-footer {
+  padding: 0 1.5rem 1.5rem;
+  display: flex;
+  gap: 0.75rem;
 }
 
-.workout-modal::-webkit-scrollbar-thumb {
-  background: var(--border-default);
-  border-radius: var(--radius-full);
+.modal-footer .btn {
+  flex: 1;
 }
 
-@media (max-width: 600px) {
-  .workout-modal {
-    padding: 24px;
-    border-radius: var(--radius-lg);
-    max-height: 85vh;
+/* ============================================================
+   Адаптивность
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .modal-content {
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+    animation: slideUp 0.3s ease;
   }
 
   .modal-header {
+    padding: 1.25rem 1.25rem 0;
+  }
+
+  .modal-header h2 {
+    font-size: 1.3rem;
+  }
+
+  .modal-body {
+    padding: 1.25rem;
+  }
+
+  .modal-footer {
+    padding: 0 1.25rem 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-header {
+    padding: 1rem 1rem 0;
+  }
+
+  .modal-header h2 {
+    font-size: 1.15rem;
+  }
+
+  .modal-body {
+    padding: 1rem;
+  }
+
+  .modal-footer {
+    padding: 0 1rem 1rem;
     flex-direction: column;
-    align-items: center;
-    text-align: center;
   }
 
-  .modal-icon {
-    font-size: 3rem;
+  .modal-footer .btn {
+    width: 100%;
   }
 
-  .modal-meta {
-    justify-content: center;
+  .modal-exercise-item {
+    padding: 0.6rem 0.75rem;
   }
 }

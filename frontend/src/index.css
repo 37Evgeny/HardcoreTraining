@@ -1,76 +1,56 @@
-/* ============================================
-   🎨 KETTLEBELL PRO — Premium Dark Theme
-   ============================================ */
+/* ============================================================
+   Глобальные стили — HardcoreTraining
+   Адаптивность + CSS-анимации + CSS-переменные
+   ============================================================ */
 
-/* ---------- Fonts ---------- */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
-
-/* ---------- CSS Variables ---------- */
+/* ---------- CSS Custom Properties (Theme + Responsive) ---------- */
 :root {
-  /* Backgrounds */
-  --bg-primary: #0d0d0f;
-  --bg-secondary: #141417;
-  --bg-card: #1a1a1f;
-  --bg-card-hover: #1f1f26;
-  --bg-elevated: #22222a;
-  --bg-overlay: rgba(0, 0, 0, 0.85);
-  --bg-input: #1a1a20;
+  /* Цветовая палитра */
+  --color-primary: #e63946;
+  --color-primary-hover: #c1121f;
+  --color-primary-light: rgba(230, 57, 70, 0.1);
+  --color-secondary: #457b9d;
+  --color-secondary-hover: #1d3557;
+  --color-accent: #f4a261;
+  --color-success: #2a9d8f;
+  --color-warning: #e9c46a;
+  --color-danger: #e63946;
+  --color-bg: #0d1b2a;
+  --color-bg-secondary: #1b2838;
+  --color-bg-card: #1e2d3d;
+  --color-bg-hover: #243447;
+  --color-text: #e0e0e0;
+  --color-text-secondary: #a0a0a0;
+  --color-text-muted: #6c757d;
+  --color-border: #2d3f4f;
+  --color-overlay: rgba(0, 0, 0, 0.7);
+  --color-white: #ffffff;
 
-  /* Borders */
-  --border-subtle: #2a2a32;
-  --border-default: #33333d;
-  --border-hover: #44444f;
+  /* Размеры */
+  --navbar-height: 64px;
+  --border-radius: 12px;
+  --border-radius-sm: 8px;
+  --border-radius-lg: 16px;
+  --max-width: 1200px;
+  --card-min-width: 280px;
 
-  /* Text */
-  --text-primary: #f0f0f5;
-  --text-secondary: #a0a0b0;
-  --text-tertiary: #707080;
-  --text-inverse: #0d0d0f;
+  /* Тени */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --shadow-glow: 0 0 20px rgba(230, 57, 70, 0.3);
 
-  /* Accent Colors */
-  --accent-red: #e74c3c;
-  --accent-red-hover: #ff5f4f;
-  --accent-red-bg: rgba(231, 76, 60, 0.12);
-  --accent-green: #2ecc71;
-  --accent-green-bg: rgba(46, 204, 113, 0.12);
-  --accent-yellow: #f1c40f;
-  --accent-yellow-bg: rgba(241, 196, 15, 0.12);
-  --accent-blue: #3498db;
-  --accent-blue-bg: rgba(52, 152, 219, 0.12);
-
-  /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.5);
-  --shadow-glow: 0 0 20px rgba(231, 76, 60, 0.15);
-
-  /* Typography */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
-  --text-xs: 0.75rem;
-  --text-sm: 0.875rem;
-  --text-base: 1rem;
-  --text-lg: 1.125rem;
-  --text-xl: 1.25rem;
-  --text-2xl: 1.5rem;
-  --text-3xl: 2rem;
-  --text-4xl: 2.5rem;
-
-  /* Spacing */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
-  --radius-full: 9999px;
-
-  /* Transitions */
+  /* Анимации */
   --transition-fast: 0.15s ease;
-  --transition-base: 0.25s ease;
-  --transition-slow: 0.35s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+  --transition-bounce: 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
-/* ---------- Reset & Base ---------- */
-*, *::before, *::after {
+/* ---------- Сброс и база ---------- */
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -78,88 +58,87 @@
 
 html {
   font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-body {
-  font-family: var(--font-sans);
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  line-height: 1.6;
+/* Блокировка скролла при открытом мобильном меню */
+body.menu-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+}
+
+#root {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-/* ---------- Scrollbar ---------- */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--bg-primary);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--border-default);
-  border-radius: var(--radius-full);
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--border-hover);
-}
-
-/* ---------- Typography ---------- */
+/* ---------- Типографика ---------- */
 h1, h2, h3, h4, h5, h6 {
   font-weight: 700;
-  line-height: 1.3;
-  color: var(--text-primary);
+  line-height: 1.2;
+  margin-bottom: 0.5rem;
 }
 
-h1 { font-size: var(--text-4xl); letter-spacing: -0.02em; }
-h2 { font-size: var(--text-2xl); letter-spacing: -0.01em; }
-h3 { font-size: var(--text-xl); }
-h4 { font-size: var(--text-lg); }
+h1 { font-size: 2.5rem; }
+h2 { font-size: 2rem; }
+h3 { font-size: 1.5rem; }
+h4 { font-size: 1.25rem; }
 
 p {
-  color: var(--text-secondary);
-  line-height: 1.7;
+  margin-bottom: 1rem;
+  color: var(--color-text-secondary);
 }
 
 a {
-  color: var(--accent-blue);
+  color: var(--color-primary);
   text-decoration: none;
   transition: color var(--transition-fast);
 }
 
 a:hover {
-  color: var(--accent-blue);
-  text-decoration: underline;
+  color: var(--color-primary-hover);
 }
 
-/* ---------- Container ---------- */
+/* ---------- Контейнер ---------- */
 .container {
-  max-width: 1200px;
+  width: 100%;
+  max-width: var(--max-width);
   margin: 0 auto;
-  padding: 30px 20px 60px;
+  padding: 0 1rem;
 }
 
-/* ---------- Buttons ---------- */
+/* ---------- Кнопки ---------- */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 12px 24px;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
   border: none;
-  border-radius: var(--radius-md);
-  font-family: var(--font-sans);
-  font-size: var(--text-base);
+  border-radius: var(--border-radius-sm);
+  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all var(--transition-base);
+  transition: all var(--transition-normal);
   text-decoration: none;
-  line-height: 1.2;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .btn:active {
@@ -167,104 +146,379 @@ a:hover {
 }
 
 .btn-primary {
-  background: var(--accent-red);
-  color: #fff;
-  box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
+  color: var(--color-white);
+  box-shadow: 0 4px 15px rgba(230, 57, 70, 0.3);
 }
 
 .btn-primary:hover {
-  background: var(--accent-red-hover);
-  box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+  box-shadow: 0 6px 20px rgba(230, 57, 70, 0.5);
   transform: translateY(-1px);
 }
 
 .btn-secondary {
-  background: var(--bg-elevated);
-  color: var(--text-primary);
-  border: 1px solid var(--border-default);
+  background: var(--color-bg-secondary);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
 }
 
 .btn-secondary:hover {
-  background: var(--bg-card-hover);
-  border-color: var(--border-hover);
+  background: var(--color-bg-hover);
+  border-color: var(--color-primary);
 }
 
-/* ---------- Cards ---------- */
+.btn-success {
+  background: linear-gradient(135deg, var(--color-success), #21867a);
+  color: var(--color-white);
+  box-shadow: 0 4px 15px rgba(42, 157, 143, 0.3);
+}
+
+.btn-success:hover {
+  box-shadow: 0 6px 20px rgba(42, 157, 143, 0.5);
+  transform: translateY(-1px);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, var(--color-danger), #b71c1c);
+  color: var(--color-white);
+}
+
+.btn-danger:hover {
+  box-shadow: 0 6px 20px rgba(230, 57, 70, 0.5);
+  transform: translateY(-1px);
+}
+
+.btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.btn-lg {
+  padding: 1rem 2rem;
+  font-size: 1.125rem;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* ---------- Формы ---------- */
+input, select, textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  color: var(--color-text);
+  font-size: 1rem;
+  transition: border-color var(--transition-fast);
+  outline: none;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+input::placeholder {
+  color: var(--color-text-muted);
+}
+
+label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+/* ---------- Карточки ---------- */
 .card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  padding: 20px;
-  transition: all var(--transition-base);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  transition: all var(--transition-normal);
 }
 
 .card:hover {
-  border-color: var(--border-default);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
-/* ---------- Selection ---------- */
-::selection {
-  background: var(--accent-red);
-  color: #fff;
+/* ---------- Скроллбар ---------- */
+::-webkit-scrollbar {
+  width: 8px;
 }
 
-/* ---------- Focus ---------- */
-:focus-visible {
-  outline: 2px solid var(--accent-red);
-  outline-offset: 2px;
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
 }
 
-/* ---------- Responsive ---------- */
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+/* ============================================================
+   АНИМАЦИИ
+   ============================================================ */
+
+/* Появление снизу вверх */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Появление сверху вниз */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Появление снизу (для модалок) */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Пульсация */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+/* Bounce-in для иконок */
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Вращение (для загрузки) */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Плавное появление */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Анимация для карточек тренировок (поочерёдное появление) */
+@keyframes cardAppear {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ---------- Классы анимаций ---------- */
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease forwards;
+}
+
+.animate-slide-down {
+  animation: slideDown 0.3s ease forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s ease forwards;
+}
+
+.animate-pulse {
+  animation: pulse 1s ease-in-out infinite;
+}
+
+.animate-bounce-in {
+  animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease forwards;
+}
+
+/* Анимация для страниц (вход) */
+.page-enter {
+  animation: fadeInUp 0.4s ease forwards;
+}
+
+/* Анимация для карточек с задержкой */
+.card-animate {
+  opacity: 0;
+  animation: cardAppear 0.5s ease forwards;
+}
+
+/* ============================================================
+   МЕДИА-ЗАПРОСЫ (Responsive)
+   ============================================================ */
+
+/* Планшеты и маленькие десктопы */
+@media (max-width: 1024px) {
+  :root {
+    --max-width: 100%;
+  }
+
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.75rem; }
+  h3 { font-size: 1.35rem; }
+}
+
+/* Планшеты */
 @media (max-width: 768px) {
-  .container {
-    padding: 20px 16px 40px;
+  :root {
+    --navbar-height: 56px;
+    --border-radius: 10px;
+    --border-radius-sm: 6px;
   }
 
-  h1 { font-size: var(--text-3xl); }
-  h2 { font-size: var(--text-xl); }
+  h1 { font-size: 1.75rem; }
+  h2 { font-size: 1.5rem; }
+  h3 { font-size: 1.2rem; }
+
+  .container {
+    padding: 0 0.75rem;
+  }
+
+  .btn {
+    padding: 0.65rem 1.25rem;
+    font-size: 0.9375rem;
+  }
+
+  .btn-lg {
+    padding: 0.85rem 1.5rem;
+    font-size: 1rem;
+  }
 }
 
+/* Мобильные телефоны */
 @media (max-width: 480px) {
-  html {
-    font-size: 15px;
+  :root {
+    --navbar-height: 48px;
+    --border-radius: 8px;
+    --border-radius-sm: 5px;
   }
+
+  h1 { font-size: 1.5rem; }
+  h2 { font-size: 1.3rem; }
+  h3 { font-size: 1.1rem; }
 
   .container {
-    padding: 16px 12px 32px;
+    padding: 0 0.5rem;
+  }
+
+  .btn {
+    padding: 0.55rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  .btn-lg {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.9375rem;
+  }
+
+  .card {
+    padding: 1rem;
   }
 }
 
-/* Светлая тема (по умолчанию) */
-:root,
-[data-theme="light"] {
-  --bg-primary: #f8f9fa;
-  --bg-card: #ffffff;
-  --bg-input: #f1f3f5;
-  --text-primary: #1a1a2e;
-  --text-secondary: #495057;
-  --text-tertiary: #868e96;
-  --border-default: #dee2e6;
-  --accent-red: #e74c3c;
-  --accent-red-bg: rgba(231, 76, 60, 0.08);
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --text-xs: 0.75rem;
-  --text-sm: 0.875rem;
-  --text-base: 1rem;
-  --text-lg: 1.125rem;
+/* Очень маленькие телефоны */
+@media (max-width: 360px) {
+  h1 { font-size: 1.3rem; }
+  h2 { font-size: 1.15rem; }
+
+  .btn {
+    padding: 0.5rem 0.85rem;
+    font-size: 0.8125rem;
+  }
 }
 
-/* Тёмная тема */
-[data-theme="dark"] {
-  --bg-primary: #0f0f1a;
-  --bg-card: #1a1a2e;
-  --bg-input: #16213e;
-  --text-primary: #e8e8e8;
-  --text-secondary: #a0a0b0;
-  --text-tertiary: #6c6c80;
-  --border-default: #2a2a40;
-  --accent-red: #e74c3c;
-  --accent-red-bg: rgba(231, 76, 60, 0.12);
+/* ---------- Утилиты ---------- */
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.text-muted { color: var(--color-text-muted); }
+.text-danger { color: var(--color-danger); }
+.text-success { color: var(--color-success); }
+
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mt-3 { margin-top: 1.5rem; }
+.mt-4 { margin-top: 2rem; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.mb-3 { margin-bottom: 1.5rem; }
+.mb-4 { margin-bottom: 2rem; }
+
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-wrap { flex-wrap: wrap; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.gap-1 { gap: 0.5rem; }
+.gap-2 { gap: 1rem; }
+.gap-3 { gap: 1.5rem; }
+
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+
+.hidden { display: none; }
+
+/* Спиннер загрузки */
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 2rem auto;
 }

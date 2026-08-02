@@ -1,0 +1,107 @@
+/* ============================================================
+   Стили таймера (Timer)
+   Адаптивность + анимация пульсации в красной зоне
+   ============================================================ */
+
+.timer-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem 0;
+}
+
+/* SVG-круг таймера */
+.timer-circle {
+  position: relative;
+  width: 220px;
+  height: 220px;
+}
+
+/* Пульсация в красной зоне */
+.timer-pulse {
+  animation: pulse 1s ease-in-out infinite;
+}
+
+/* Настройки длительности */
+.timer-settings {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 300px;
+}
+
+.timer-settings label {
+  margin: 0;
+  white-space: nowrap;
+  font-size: 0.9rem;
+}
+
+.timer-settings input {
+  width: 100px;
+  text-align: center;
+}
+
+/* Кнопки управления */
+.timer-controls {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ============================================================
+   Адаптивность
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .timer-circle {
+    width: 180px;
+    height: 180px;
+  }
+
+  .timer-circle svg {
+    width: 180px;
+    height: 180px;
+  }
+
+  .timer-container {
+    gap: 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .timer-circle {
+    width: 150px;
+    height: 150px;
+  }
+
+  .timer-circle svg {
+    width: 150px;
+    height: 150px;
+  }
+
+  .timer-container {
+    gap: 1rem;
+  }
+
+  .timer-settings {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .timer-settings input {
+    width: 100%;
+  }
+
+  .timer-controls {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .timer-controls .btn {
+    width: 100%;
+  }
+}

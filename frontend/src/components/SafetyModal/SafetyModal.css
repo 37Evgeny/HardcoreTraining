@@ -1,111 +1,184 @@
-.safety-modal-overlay {
+/* ============================================================
+   Стили модального окна безопасности (SafetyModal)
+   Адаптивность: на мобильных прижимается к низу
+   ============================================================ */
+
+.safety-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: var(--bg-overlay);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: var(--color-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1100;
-  padding: 20px;
+  z-index: 1000;
+  padding: 1rem;
   animation: fadeIn 0.2s ease;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .safety-modal {
-  background: var(--bg-secondary);
-  border-radius: var(--radius-xl);
-  max-width: 480px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  max-width: 500px;
   width: 100%;
-  position: relative;
-  padding: 40px;
-  border: 1px solid var(--border-default);
+  max-height: 85vh;
+  overflow-y: auto;
+  animation: slideUp 0.3s ease;
   box-shadow: var(--shadow-lg);
-  animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.safety-modal-close {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-secondary);
-  font-size: 1.2rem;
-  cursor: pointer;
-  padding: 8px 12px;
-  border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
-  line-height: 1;
+.safety-header {
+  text-align: center;
+  padding: 2rem 1.5rem 0;
 }
 
-.safety-modal-close:hover {
-  background: var(--bg-card-hover);
-  color: var(--text-primary);
-  border-color: var(--border-hover);
+.safety-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  animation: bounceIn 0.6s ease;
 }
 
-.safety-modal h2 {
-  margin: 0 0 4px;
-  font-size: var(--text-2xl);
-  font-weight: 700;
+.safety-header h2 {
+  font-size: 1.5rem;
+  color: var(--color-warning);
+  margin-bottom: 0.5rem;
 }
 
-.safety-workout-name {
-  color: var(--accent-red);
-  font-weight: 600;
-  margin-bottom: 24px;
-  font-size: var(--text-lg);
+.safety-header p {
+  color: var(--color-text-secondary);
+  font-size: 0.95rem;
+}
+
+.safety-body {
+  padding: 1.5rem;
 }
 
 .safety-checklist {
+  list-style: none;
+  padding: 0;
+  margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  margin-bottom: 24px;
+  gap: 1rem;
 }
 
-.safety-item {
+.safety-check-item {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-bg-secondary);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--color-border);
   cursor: pointer;
-  font-size: var(--text-base);
-  color: var(--text-secondary);
-  padding: 8px 12px;
-  border-radius: var(--radius-md);
-  transition: background var(--transition-fast);
+  transition: all var(--transition-fast);
+  user-select: none;
 }
 
-.safety-item:hover {
-  background: rgba(255, 255, 255, 0.03);
+.safety-check-item:hover {
+  border-color: var(--color-primary);
+  background: var(--color-bg-hover);
 }
 
-.safety-item input[type="checkbox"] {
+.safety-check-item.checked {
+  border-color: var(--color-success);
+  background: rgba(42, 157, 143, 0.1);
+}
+
+.safety-checkbox {
   width: 20px;
   height: 20px;
-  accent-color: var(--accent-red);
+  margin-top: 2px;
   flex-shrink: 0;
+  accent-color: var(--color-primary);
+  cursor: pointer;
 }
 
-.safety-warning {
-  color: var(--accent-yellow);
-  font-size: var(--text-sm);
-  text-align: center;
-  margin-bottom: 24px;
-  padding: 12px 16px;
-  background: var(--accent-yellow-bg);
-  border-radius: var(--radius-md);
-  border: 1px solid rgba(241, 196, 15, 0.15);
+.safety-check-text {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
 }
 
-.safety-accept-btn {
+.safety-footer {
+  padding: 0 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.safety-footer .btn {
   width: 100%;
-  padding: 16px;
-  font-size: var(--text-lg);
-  font-weight: 700;
-  border-radius: var(--radius-md);
+}
+
+/* ============================================================
+   Адаптивность
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .safety-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .safety-modal {
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+  }
+
+  .safety-header {
+    padding: 1.5rem 1.25rem 0;
+  }
+
+  .safety-icon {
+    font-size: 2.5rem;
+  }
+
+  .safety-header h2 {
+    font-size: 1.3rem;
+  }
+
+  .safety-body {
+    padding: 1.25rem;
+  }
+
+  .safety-footer {
+    padding: 0 1.25rem 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .safety-header {
+    padding: 1.25rem 1rem 0;
+  }
+
+  .safety-icon {
+    font-size: 2rem;
+  }
+
+  .safety-header h2 {
+    font-size: 1.15rem;
+  }
+
+  .safety-body {
+    padding: 1rem;
+  }
+
+  .safety-footer {
+    padding: 0 1rem 1rem;
+  }
+
+  .safety-check-item {
+    padding: 0.6rem 0.75rem;
+  }
+
+  .safety-check-text {
+    font-size: 0.85rem;
+  }
 }

@@ -1,0 +1,161 @@
+/* ============================================================
+   Стили главной страницы (HomePage)
+   Адаптивная сетка карточек + анимации
+   ============================================================ */
+
+.home-page {
+  min-height: calc(100vh - var(--navbar-height));
+  padding: 2rem 0;
+}
+
+.home-container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* ---------- Заголовок ---------- */
+.home-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.home-header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.home-header p {
+  font-size: 1.1rem;
+  color: var(--color-text-secondary);
+}
+
+/* ---------- Фильтры ---------- */
+.home-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.filter-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.search-input {
+  max-width: 400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ---------- Сетка тренировок ---------- */
+.workout-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+/* ---------- Пустое состояние ---------- */
+.home-empty {
+  text-align: center;
+  padding: 4rem 1rem;
+  color: var(--color-text-muted);
+}
+
+.home-empty p {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+/* ---------- Загрузка ---------- */
+.home-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  gap: 1rem;
+}
+
+/* ---------- Ошибка ---------- */
+.home-error {
+  text-align: center;
+  padding: 4rem 1rem;
+}
+
+.home-error h2 {
+  color: var(--color-danger);
+  margin-bottom: 1rem;
+}
+
+.home-error p {
+  margin-bottom: 1.5rem;
+}
+
+/* ============================================================
+   Адаптивность
+   ============================================================ */
+
+/* Планшеты */
+@media (max-width: 1024px) {
+  .workout-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+  }
+
+  .home-header h1 {
+    font-size: 2rem;
+  }
+}
+
+/* Мобильные телефоны */
+@media (max-width: 768px) {
+  .home-page {
+    padding: 1.5rem 0;
+  }
+
+  .workout-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .home-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .home-header p {
+    font-size: 1rem;
+  }
+
+  .filter-buttons {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .filter-buttons .btn {
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-page {
+    padding: 1rem 0;
+  }
+
+  .home-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .home-filters {
+    gap: 0.75rem;
+  }
+}

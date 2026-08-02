@@ -1,0 +1,305 @@
+/* ============================================================
+   Стили страницы тренировки (WorkoutPage)
+   Прогресс-бар, упражнения, анимации
+   ============================================================ */
+
+.workout-page {
+  min-height: calc(100vh - var(--navbar-height));
+  padding: 2rem 0;
+}
+
+.workout-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* ---------- Заголовок ---------- */
+.workout-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.workout-header-info {
+  flex: 1;
+}
+
+.workout-header-info h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.75rem;
+}
+
+.workout-level {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  background: rgba(230, 57, 70, 0.15);
+  color: var(--color-primary);
+}
+
+/* ---------- Прогресс-бар ---------- */
+.workout-progress {
+  margin-bottom: 2rem;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
+.progress-bar {
+  position: relative;
+  height: 12px;
+  background: var(--color-bg-secondary);
+  border-radius: 6px;
+  overflow: visible;
+  border: 1px solid var(--color-border);
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  border-radius: 6px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 10px rgba(230, 57, 70, 0.3);
+  position: relative;
+  z-index: 1;
+}
+
+/* Точки-индикаторы упражнений */
+.progress-dot {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-bg-secondary);
+  border: 2px solid var(--color-border);
+  z-index: 2;
+  transition: all var(--transition-normal);
+}
+
+.progress-dot.completed {
+  background: var(--color-success);
+  border-color: var(--color-success);
+  box-shadow: 0 0 8px rgba(42, 157, 143, 0.5);
+}
+
+.progress-dot.current {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 12px rgba(230, 57, 70, 0.6);
+  width: 20px;
+  height: 20px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* ---------- Упражнение ---------- */
+.workout-exercise {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.exercise-header {
+  margin-bottom: 1rem;
+}
+
+.exercise-number {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.exercise-name {
+  font-size: 1.5rem;
+  margin-bottom: 0.75rem;
+  color: var(--color-text);
+}
+
+.exercise-description {
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.exercise-reps,
+.exercise-weight {
+  font-size: 1rem;
+  color: var(--color-accent);
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.exercise-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+/* ---------- Отдых ---------- */
+.workout-rest {
+  text-align: center;
+  padding: 2rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  margin-bottom: 1.5rem;
+}
+
+.rest-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.workout-rest h2 {
+  margin-bottom: 0.5rem;
+}
+
+.workout-rest p {
+  margin-bottom: 1.5rem;
+}
+
+/* ---------- Завершение ---------- */
+.workout-finished {
+  text-align: center;
+  padding: 4rem 1rem;
+}
+
+.workout-finished-icon {
+  font-size: 5rem;
+  margin-bottom: 1.5rem;
+}
+
+.workout-finished h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: var(--color-success);
+}
+
+.workout-finished p {
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+}
+
+/* ---------- Авто-режим ---------- */
+.workout-auto-toggle {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.toggle-text {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
+/* ---------- Загрузка ---------- */
+.workout-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  gap: 1rem;
+}
+
+/* ---------- Ошибка ---------- */
+.workout-error {
+  text-align: center;
+  padding: 4rem 1rem;
+}
+
+.workout-error h2 {
+  color: var(--color-danger);
+  margin-bottom: 1rem;
+}
+
+.workout-error p {
+  margin-bottom: 1.5rem;
+}
+
+/* ============================================================
+   Адаптивность
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .workout-page {
+    padding: 1.5rem 0;
+  }
+
+  .workout-header {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .workout-header-info h1 {
+    font-size: 1.5rem;
+  }
+
+  .workout-exercise {
+    padding: 1.5rem;
+  }
+
+  .exercise-name {
+    font-size: 1.3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .workout-page {
+    padding: 1rem 0;
+  }
+
+  .workout-exercise {
+    padding: 1.25rem;
+  }
+
+  .exercise-name {
+    font-size: 1.15rem;
+  }
+
+  .exercise-actions {
+    flex-direction: column;
+  }
+
+  .exercise-actions .btn {
+    width: 100%;
+  }
+
+  .workout-finished-icon {
+    font-size: 4rem;
+  }
+
+  .workout-finished h2 {
+    font-size: 1.5rem;
+  }
+}
