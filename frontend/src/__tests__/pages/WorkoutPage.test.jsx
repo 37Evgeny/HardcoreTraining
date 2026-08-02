@@ -10,17 +10,14 @@ vi.mock('../../context/AuthContext', () => ({
 }));
 
 vi.mock('../../services/api', () => ({
-  workoutsApi: {
-    getById: vi.fn(),
-    startSession: vi.fn(),
-    finishSession: vi.fn(),
-  },
+  getWorkoutById: vi.fn(),
+  startSession: vi.fn(),
+  finishSession: vi.fn(),
 }));
 
 import { useAuth } from '../../context/AuthContext';
-import { workoutsApi } from '../../services/api';
+import { getWorkoutById, startSession } from '../../services/api';
 
-// Убираем TypeScript: (workoutId = 'w-1') => { ... }
 const renderWorkoutPage = (workoutId) => {
   window.history.pushState({}, '', `/workouts/${workoutId || 'w-1'}`);
   return render(
@@ -37,9 +34,26 @@ const mockWorkout = {
   title: 'Foundation Beginner',
   level: 'BEGINNER',
   description: 'Базовая тренировка',
+  durationMinutes: 30,
   exercises: [
-    { id: 'e-1', name: 'Swing', sets: 3, reps: 10, weight: 16 },
-    { id: 'e-2', name: 'Goblet Squat', sets: 3, reps: 8, weight: 12 },
+    {
+      id: 'e-1',
+      name: 'Swing',
+      sets: 3,
+      reps: 10,
+      weight: 16,
+      restSeconds: 60,
+      instructions: 'Do the swing',
+    },
+    {
+      id: 'e-2',
+      name: 'Goblet Squat',
+      sets: 3,
+      reps: 8,
+      weight: 12,
+      restSeconds: 60,
+      instructions: 'Do the squat',
+    },
   ],
 };
 
@@ -50,48 +64,80 @@ describe('WorkoutPage', () => {
   });
 
   it('должен отображать состояние загрузки', () => {
-    workoutsApi.getById.mockReturnValue(new Promise(() => {}));
+    getWorkoutById.mockReturnValue(new Promise(() => {}));
     renderWorkoutPage();
     expect(screen.getByText(/загрузка/i)).toBeInTheDocument();
   });
 
+// frontend/src/__tests__/pages/WorkoutPage.test.jsx
+// ... (всё то же самое до теста "должен отображать данные тренировки после загрузки")
+
   it('должен отображать данные тренировки после загрузки', async () => {
-    workoutsApi.getById.mockResolvedValue({ data: mockWorkout });
+    getWorkoutById.mockResolvedValue({
+      data: {
+        success: true,
+        data: mockWorkout,
+      },
+    });
     renderWorkoutPage();
 
     await waitFor(() => {
-      expect(screen.getByText('Foundation Beginner')).toBeInTheDocument();
+      const headings = screen.getAllByText('Foundation Beginner');
+      expect(headings.length).toBeGreaterThanOrEqual(1);
     });
-    expect(screen.getByText(/BEGINNER/i)).toBeInTheDocument();
-    expect(screen.getByText('Swing')).toBeInTheDocument();
-    expect(screen.getByText('Goblet Squat')).toBeInTheDocument();
+
+    expect(
+      screen.getByRole('heading', { name: /foundation beginner/i })
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Начальный/i)).toBeInTheDocument();
+
+    // ✅ Исправлено: ищем по тексту "Упражнений:" а не по цифре "2"
+    // Цифра 2 дублируется в прогресс-баре ("1 / 2") и в количестве упражнений
+    expect(screen.getByText(/Упражнений:/i)).toBeInTheDocument();
+    expect(screen.getByText(/30 минут/i)).toBeInTheDocument();
   });
 
   it('должен отображать ошибку, если тренировка не найдена', async () => {
-    workoutsApi.getById.mockRejectedValue({ response: { status: 404 } });
+    getWorkoutById.mockRejectedValue({ response: { status: 404 } });
     renderWorkoutPage();
 
     await waitFor(() => {
-      expect(screen.getByText(/не найдена/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/не удалось загрузить тренировку/i)
+      ).toBeInTheDocument();
     });
   });
 
   it('должен запускать сессию при нажатии на кнопку "Начать"', async () => {
     const user = userEvent.setup();
-    workoutsApi.getById.mockResolvedValue({ data: mockWorkout });
-    workoutsApi.startSession.mockResolvedValue({ data: { id: 'session-1' } });
+    getWorkoutById.mockResolvedValue({
+      data: {
+        success: true,
+        data: mockWorkout,
+      },
+    });
+    startSession.mockResolvedValue({
+      data: {
+        success: true,
+        data: { id: 'session-1' },
+      },
+    });
 
     renderWorkoutPage();
 
     await waitFor(() => {
-      expect(screen.getByText('Foundation Beginner')).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: /foundation beginner/i })
+      ).toBeInTheDocument();
     });
 
-    const startButton = screen.getByRole('button', { name: /начать тренировку/i });
+    const startButton = screen.getByRole('button', {
+      name: /начать тренировку/i,
+    });
     await user.click(startButton);
 
     await waitFor(() => {
-      expect(workoutsApi.startSession).toHaveBeenCalledWith('w-1');
+      expect(startSession).toHaveBeenCalledWith({ workoutId: 'w-1' });
     });
   });
 });

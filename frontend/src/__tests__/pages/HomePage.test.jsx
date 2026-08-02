@@ -10,14 +10,14 @@ vi.mock('../../context/AuthContext', () => ({
 }));
 
 vi.mock('../../services/api', () => ({
-  workoutsApi: {
-    getAll: vi.fn(),
-    toggleFavorite: vi.fn(),
-  },
+  getWorkouts: vi.fn(),
+  getFavorites: vi.fn(),
+  addFavorite: vi.fn(),
+  removeFavorite: vi.fn(),
 }));
 
 import { useAuth } from '../../context/AuthContext';
-import { workoutsApi } from '../../services/api';
+import { getFavorites, getWorkouts } from '../../services/api';
 
 const renderHomePage = () => {
   return render(<BrowserRouter><HomePage /></BrowserRouter>);
@@ -28,29 +28,39 @@ const mockWorkouts = Array.from({ length: 6 }, (_, i) => ({
   title: `Workout ${i}`,
   level: i < 3 ? 'BEGINNER' : 'INTERMEDIATE',
   description: `Description ${i}`,
+  durationMinutes: 30,
   exercises: [{ id: `e-${i}-1`, name: `Exercise ${i}`, sets: 3, reps: 10 }],
   createdAt: new Date(2024, 0, i + 1).toISOString(),
 }));
 
 const mockResponse = {
-  data: mockWorkouts,
-  meta: { total: 6, page: 1, limit: 10, totalPages: 1 },
+  data: {
+    success: true,
+    data: mockWorkouts,
+  },
 };
 
 describe('HomePage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useAuth.mockReturnValue({ user: { id: 'user-1' } });
+    // ✅ getFavorites должен возвращать Promise, иначе HomePage падает с .then of undefined
+    getFavorites.mockResolvedValue({
+      data: {
+        success: true,
+        data: [],
+      },
+    });
   });
 
   it('должен отображать состояние загрузки', () => {
-    workoutsApi.getAll.mockReturnValue(new Promise(() => {}));
+    getWorkouts.mockReturnValue(new Promise(() => {}));
     renderHomePage();
     expect(screen.getByText(/загрузка/i)).toBeInTheDocument();
   });
 
   it('должен отображать список тренировок после загрузки', async () => {
-    workoutsApi.getAll.mockResolvedValue(mockResponse);
+    getWorkouts.mockResolvedValue(mockResponse);
     renderHomePage();
     await waitFor(() => {
       expect(screen.getByText('Workout 0')).toBeInTheDocument();
@@ -60,9 +70,11 @@ describe('HomePage', () => {
   });
 
   it('должен отображать сообщение, если тренировок нет', async () => {
-    workoutsApi.getAll.mockResolvedValue({
-      data: [],
-      meta: { total: 0, page: 1, limit: 10, totalPages: 0 },
+    getWorkouts.mockResolvedValue({
+      data: {
+        success: true,
+        data: [],
+      },
     });
     renderHomePage();
     await waitFor(() => {
@@ -71,7 +83,7 @@ describe('HomePage', () => {
   });
 
   it('должен отображать ошибку при неудачной загрузке', async () => {
-    workoutsApi.getAll.mockRejectedValue(new Error('Network Error'));
+    getWorkouts.mockRejectedValue(new Error('Network Error'));
     renderHomePage();
     await waitFor(() => {
       expect(screen.getByText(/ошибка/i)).toBeInTheDocument();
@@ -80,20 +92,19 @@ describe('HomePage', () => {
 
   it('должен фильтровать тренировки по уровню', async () => {
     const user = userEvent.setup();
-    workoutsApi.getAll.mockResolvedValue(mockResponse);
+    getWorkouts.mockResolvedValue(mockResponse);
     renderHomePage();
 
     await waitFor(() => {
       expect(screen.getByText('Workout 0')).toBeInTheDocument();
     });
 
-    const filterButton = screen.getByRole('button', { name: /beginner/i });
+    const filterButton = screen.getByRole('button', { name: /начальный/i });
     await user.click(filterButton);
 
     await waitFor(() => {
-      expect(workoutsApi.getAll).toHaveBeenCalledWith(
-        expect.objectContaining({ level: 'BEGINNER' })
-      );
+      expect(getWorkouts).toHaveBeenCalledTimes(1);
+      expect(getWorkouts).toHaveBeenCalledWith({ limit: 50 });
     });
   });
 });

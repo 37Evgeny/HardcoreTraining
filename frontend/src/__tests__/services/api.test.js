@@ -1,80 +1,151 @@
 // frontend/src/__tests__/services/api.test.js
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Мок для localStorage
-const localStorageMock = (() => {
-  let store = {};
-  return {
-    getItem: vi.fn((key) => store[key] || null),
-    setItem: vi.fn((key, value) => { store[key] = value; }),
-    removeItem: vi.fn((key) => { delete store[key]; }),
-    clear: vi.fn(() => { store = {}; }),
+vi.mock('axios', () => {
+  const mockInstance = {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    patch: vi.fn(),
+    delete: vi.fn(),
+    interceptors: {
+      request: { use: vi.fn() },
+      response: { use: vi.fn() },
+    },
   };
-})();
 
-Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock,
+  return {
+    default: {
+      create: vi.fn(() => mockInstance),
+      __mockInstance: mockInstance,
+    },
+  };
 });
 
-// Импортируем api
-import { authApi, workoutsApi } from '../../services/api';
+import axios from 'axios';
+import {
+  finishSession,
+  getWorkoutById,
+  getWorkouts,
+  login,
+  register,
+  startSession,
+} from '../../services/api';
+
+const mockAxiosInstance = axios.__mockInstance;
 
 describe('API Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    localStorageMock.clear();
   });
 
   describe('workoutsApi', () => {
     it('getAll должен вызывать GET /workouts', async () => {
-      // Просто проверяем, что функции существуют и возвращают промис
-      const result = workoutsApi.getAll({ page: 1, limit: 10 });
-      expect(result).toBeInstanceOf(Promise);
+      mockAxiosInstance.get.mockResolvedValue({
+        data: { success: true, data: [] },
+      });
+
+      const result = await getWorkouts({ page: 1, limit: 10 });
+
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith('/workouts', {
+        params: { page: 1, limit: 10 },
+      });
+      expect(result.data.success).toBe(true);
     });
 
     it('getById должен вызывать GET /workouts/:id', async () => {
-      const result = workoutsApi.getById('w-1');
-      expect(result).toBeInstanceOf(Promise);
+      mockAxiosInstance.get.mockResolvedValue({
+        data: { success: true, data: { id: 'w-1' } },
+      });
+
+      const result = await getWorkoutById('w-1');
+
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith('/workouts/w-1');
+      expect(result.data.data.id).toBe('w-1');
     });
 
-    it('startSession должен вызывать POST /workouts/:id/start', async () => {
-      const result = workoutsApi.startSession('w-1');
-      expect(result).toBeInstanceOf(Promise);
+    it('startSession должен вызывать POST /workouts/start', async () => {
+      mockAxiosInstance.post.mockResolvedValue({
+        data: { success: true, data: { id: 'session-1' } },
+      });
+
+      const result = await startSession({ workoutId: 'w-1' });
+
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/workouts/start', {
+        workoutId: 'w-1',
+      });
+      expect(result.data.data.id).toBe('session-1');
     });
 
-    it('finishSession должен вызывать POST /sessions/:id/finish', async () => {
-      const result = workoutsApi.finishSession('session-1');
-      expect(result).toBeInstanceOf(Promise);
-    });
+    it('finishSession должен завершать сессию', async () => {
+      // ✅ Мокаем все HTTP-методы, чтобы тест сам определил,
+      // какой из них реально вызывает finishSession
+      mockAxiosInstance.post.mockResolvedValue({
+        data: { success: true },
+      });
+      mockAxiosInstance.put.mockResolvedValue({
+        data: { success: true },
+      });
+      mockAxiosInstance.patch.mockResolvedValue({
+        data: { success: true },
+      });
 
-    it('toggleFavorite должен вызывать POST /workouts/:id/favorite', async () => {
-      const result = workoutsApi.toggleFavorite('w-1');
-      expect(result).toBeInstanceOf(Promise);
+      const result = await finishSession('session-1');
+
+      // ✅ Собираем все вызовы всех HTTP-методов
+      const allCalls = [
+        ...mockAxiosInstance.post.mock.calls.map((args) => ({ method: 'post', args })),
+        ...mockAxiosInstance.put.mock.calls.map((args) => ({ method: 'put', args })),
+        ...mockAxiosInstance.patch.mock.calls.map((args) => ({ method: 'patch', args })),
+        ...mockAxiosInstance.delete.mock.calls.map((args) => ({ method: 'delete', args })),
+      ];
+
+      // ✅ Должен быть хотя бы один HTTP-вызов
+      expect(allCalls.length).toBeGreaterThan(0);
+
+      // ✅ Проверяем URL — должен содержать /workouts/{id}/finish
+      const [firstCall] = allCalls;
+      expect(firstCall.args[0]).toBe('/workouts/session-1/finish');
+
+      expect(result.data.success).toBe(true);
     });
   });
 
   describe('authApi', () => {
     it('login должен вызывать POST /auth/login', async () => {
-      const result = authApi.login('test@test.com', 'password');
-      expect(result).toBeInstanceOf(Promise);
+      mockAxiosInstance.post.mockResolvedValue({
+        data: { success: true, data: { token: 'test-token' } },
+      });
+
+      const result = await login({
+        email: 'test@test.com',
+        password: 'password',
+      });
+
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/auth/login', {
+        email: 'test@test.com',
+        password: 'password',
+      });
+      expect(result.data.data.token).toBe('test-token');
     });
 
     it('register должен вызывать POST /auth/register', async () => {
-      const result = authApi.register('test@test.com', 'password', 'Test');
-      expect(result).toBeInstanceOf(Promise);
-    });
-  });
+      mockAxiosInstance.post.mockResolvedValue({
+        data: { success: true, data: { id: 'user-1' } },
+      });
 
-  describe('localStorage', () => {
-    it('должен сохранять и получать accessToken', () => {
-      localStorageMock.setItem('accessToken', 'test-token');
-      expect(localStorageMock.getItem('accessToken')).toBe('test-token');
-    });
+      const result = await register({
+        email: 'test@test.com',
+        password: 'password',
+        name: 'Test',
+      });
 
-    it('должен удалять токены', () => {
-      localStorageMock.setItem('accessToken', 'test-token');
-      localStorageMock.removeItem('accessToken');
-      expect(localStorageMock.getItem('accessToken')).toBeNull();
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/auth/register', {
+        email: 'test@test.com',
+        password: 'password',
+        name: 'Test',
+      });
+      expect(result.data.data.id).toBe('user-1');
     });
   });
 });

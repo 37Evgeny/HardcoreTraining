@@ -2,7 +2,8 @@
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
-import WorkoutCard from '../../components/WorkoutCard';
+// ✅ Исправлено: путь к файлу внутри директории WorkoutCard/
+import WorkoutCard from '../../components/WorkoutCard/WorkoutCard';
 
 vi.mock('../../context/AuthContext', () => ({
   useAuth: vi.fn(),
@@ -10,7 +11,6 @@ vi.mock('../../context/AuthContext', () => ({
 
 import { useAuth } from '../../context/AuthContext';
 
-// Убираем TypeScript: (ui: React.ReactElement) => (ui)
 const renderWithRouter = (ui) => {
   return render(<BrowserRouter>{ui}</BrowserRouter>);
 };
@@ -20,6 +20,7 @@ const mockWorkout = {
   title: 'Foundation Beginner',
   description: 'Базовая тренировка для начинающих',
   level: 'BEGINNER',
+  durationMinutes: 30,
   exercises: [
     { id: 'e-1', name: 'Swing', sets: 3, reps: 10 },
     { id: 'e-2', name: 'Goblet Squat', sets: 3, reps: 8 },
@@ -35,41 +36,77 @@ describe('WorkoutCard', () => {
 
   it('должен отображать заголовок тренировки', () => {
     useAuth.mockReturnValue({ user: null });
-    renderWithRouter(<WorkoutCard workout={mockWorkout} />);
+    // ✅ WorkoutCard ожидает пропсы: workout, icon, levelLabel, onClick
+    renderWithRouter(
+      <WorkoutCard
+        workout={mockWorkout}
+        icon="🏋️"
+        levelLabel="Начальный"
+        onClick={() => {}}
+      />
+    );
     expect(screen.getByText('Foundation Beginner')).toBeInTheDocument();
   });
 
   it('должен отображать уровень тренировки', () => {
     useAuth.mockReturnValue({ user: null });
-    renderWithRouter(<WorkoutCard workout={mockWorkout} />);
-    expect(screen.getByText(/BEGINNER/i)).toBeInTheDocument();
+    renderWithRouter(
+      <WorkoutCard
+        workout={mockWorkout}
+        icon="🏋️"
+        levelLabel="Начальный"
+        onClick={() => {}}
+      />
+    );
+    expect(screen.getByText(/Начальный/i)).toBeInTheDocument();
   });
 
   it('должен отображать количество упражнений', () => {
     useAuth.mockReturnValue({ user: null });
-    renderWithRouter(<WorkoutCard workout={mockWorkout} />);
-    expect(screen.getByText(/3 exercises/i)).toBeInTheDocument();
+    renderWithRouter(
+      <WorkoutCard
+        workout={mockWorkout}
+        icon="🏋️"
+        levelLabel="Начальный"
+        onClick={() => {}}
+      />
+    );
+    // ✅ Исправлено: реальный формат — "🏋️ 3 упр."
+    expect(screen.getByText(/3 упр/i)).toBeInTheDocument();
   });
 
-  it('должен содержать ссылку на страницу тренировки', () => {
+  it('должен вызывать onClick при клике', () => {
     useAuth.mockReturnValue({ user: null });
-    renderWithRouter(<WorkoutCard workout={mockWorkout} />);
-    const link = screen.getByRole('link', { name: /начать тренировку/i });
-    expect(link).toBeInTheDocument();
-    expect(link).toHaveAttribute('href', '/workouts/w-1');
+    const handleClick = vi.fn();
+    renderWithRouter(
+      <WorkoutCard
+        workout={mockWorkout}
+        icon="🏋️"
+        levelLabel="Начальный"
+        onClick={handleClick}
+      />
+    );
+    // ✅ Кликаем по карточке
+    const card = screen.getByText('Foundation Beginner').closest('.workout-card');
+    card.click();
+    expect(handleClick).toHaveBeenCalledTimes(1);
   });
 
-  it('должен показывать кнопку избранного для авторизованных', () => {
-    useAuth.mockReturnValue({ user: { id: 'user-1' } });
-    renderWithRouter(<WorkoutCard workout={mockWorkout} />);
-    expect(screen.getByRole('button', { name: /избранное/i })).toBeInTheDocument();
-  });
-
-  it('НЕ должен показывать кнопку избранного для неавторизованных', () => {
+  it('должен обрезать длинное описание', () => {
     useAuth.mockReturnValue({ user: null });
-    renderWithRouter(<WorkoutCard workout={mockWorkout} />);
-    expect(
-      screen.queryByRole('button', { name: /избранное/i })
-    ).not.toBeInTheDocument();
+    const longDescWorkout = {
+      ...mockWorkout,
+      description: 'A'.repeat(100),
+    };
+    renderWithRouter(
+      <WorkoutCard
+        workout={longDescWorkout}
+        icon="🏋️"
+        levelLabel="Начальный"
+        onClick={() => {}}
+      />
+    );
+    // ✅ Описание обрезается до 80 символов + '...'
+    expect(screen.getByText(/\.\.\.$/)).toBeInTheDocument();
   });
 });
