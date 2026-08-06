@@ -1,15 +1,13 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import './SafetyModal.css';
 
 /**
- * Модальное окно безопасности перед началом тренировки.
- * Пользователь должен подтвердить все пункты чек-листа.
+ * SafetyModal — чек-лист безопасности перед тренировкой.
  *
- * @param {Object} props
- * @param {Function} props.onConfirm - колбэк при подтверждении всех пунктов
+ * @param {Function} onConfirm - колбэк при подтверждении всех пунктов
+ * @param {Function} onClose   - колбэк закрытия (клик по фону / Escape)
  */
-function SafetyModal({ onConfirm }) {
-  // Состояние каждого чекбокса
+function SafetyModal({ onConfirm, onClose }) {
   const [checks, setChecks] = useState({
     warmup: false,
     health: false,
@@ -18,66 +16,57 @@ function SafetyModal({ onConfirm }) {
     equipment: false,
   });
 
-  /**
-   * Переключение состояния чекбокса.
-   * @param {string} key - ключ чекбокса
-   */
+  // Данные чек-листа вынесены в константу для чистоты JSX
+  const CHECKLIST = [
+    { key: 'warmup', text: '✅ Я сделал разминку (5-10 мин)' },
+    { key: 'health', text: '✅ Я чувствую себя здоровым и готов к нагрузке' },
+    { key: 'technique', text: '✅ Я помню о правильной технике выполнения' },
+    { key: 'hydration', text: '✅ У меня есть вода рядом' },
+    { key: 'equipment', text: '✅ Гиря/снаряжение в хорошем состоянии' },
+  ];
+
+  const allChecked = Object.values(checks).every(Boolean);
+  const checkedCount = Object.values(checks).filter(Boolean).length;
+
   const toggleCheck = useCallback((key) => {
-    setChecks(prev => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
+    setChecks(prev => ({ ...prev, [key]: !prev[key] }));
   }, []);
 
-  /**
-   * Все ли чекбоксы отмечены.
-   */
-  const allChecked = Object.values(checks).every(Boolean);
-
-  /**
-   * Обработчик подтверждения.
-   */
   const handleConfirm = useCallback(() => {
-    if (allChecked && onConfirm) {
-      onConfirm();
-    }
+    if (allChecked && onConfirm) onConfirm();
   }, [allChecked, onConfirm]);
 
-  /**
-   * Обработчик клавиши Enter для подтверждения.
-   */
-  const handleKeyDown = useCallback((e) => {
-    if (e.key === 'Enter' && allChecked) {
-      handleConfirm();
-    }
-  }, [allChecked, handleConfirm]);
+  // Закрытие по Escape
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape' && onClose) onClose();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
 
   return (
-    <div className="safety-overlay" onClick={handleConfirm}>
+    <div
+      className="safety-overlay"
+      onClick={onClose}   // ИСПРАВЛЕНО: клик по фону ЗАКРЫВАЕТ, а не подтверждает
+      role="presentation"
+    >
       <div
         className="safety-modal"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
+        aria-modal="true"
         aria-label="Проверка безопасности"
-        onKeyDown={handleKeyDown}
       >
-        {/* Заголовок */}
         <div className="safety-header">
           <div className="safety-icon">⚠️</div>
           <h2>Проверка безопасности</h2>
           <p>Перед началом тренировки подтверди следующие пункты:</p>
         </div>
 
-        {/* Чек-лист */}
         <div className="safety-body">
           <div className="safety-checklist">
-            {[
-              { key: 'warmup', text: '✅ Я сделал разминку (5-10 мин)' },
-              { key: 'health', text: '✅ Я чувствую себя здоровым и готов к нагрузке' },
-              { key: 'technique', text: '✅ Я помню о правильной технике выполнения' },
-              { key: 'hydration', text: '✅ У меня есть вода рядом' },
-              { key: 'equipment', text: '✅ Гиря/снаряжение в хорошем состоянии' },
-            ].map(item => (
+            {CHECKLIST.map(item => (
               <label
                 key={item.key}
                 className={`safety-check-item ${checks[item.key] ? 'checked' : ''}`}
@@ -94,15 +83,16 @@ function SafetyModal({ onConfirm }) {
           </div>
         </div>
 
-        {/* Кнопка подтверждения */}
         <div className="safety-footer">
           <button
+            type="button"
             className={`btn ${allChecked ? 'btn-success' : 'btn-secondary'}`}
             onClick={handleConfirm}
             disabled={!allChecked}
-            type="button"
           >
-            {allChecked ? '🚀 Начать тренировку' : `☐ Отметь все пункты (${Object.values(checks).filter(Boolean).length}/${Object.values(checks).length})`}
+            {allChecked
+              ? '🚀 Начать тренировку'
+              : `☐ Отметь все пункты (${checkedCount}/${CHECKLIST.length})`}
           </button>
         </div>
       </div>

@@ -5,7 +5,7 @@ import { env } from '../shared/utils/env';
 import { AppError } from './errorHandler';
 
 /**
- * Middleware для проверки JWT токена.
+ * authenticate — проверка JWT.
  * Добавляет user в req, если токен валиден.
  */
 export const authenticate = (
@@ -15,21 +15,16 @@ export const authenticate = (
 ): void => {
   try {
     const authHeader = req.headers.authorization;
-
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       throw new AppError('Authentication required', 401);
     }
 
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
-
     req.user = decoded;
     next();
   } catch (error) {
-    if (error instanceof AppError) {
-      next(error);
-      return;
-    }
+    if (error instanceof AppError) { next(error); return; }
     if (error instanceof jwt.JsonWebTokenError) {
       next(new AppError('Invalid or expired token', 401));
       return;
@@ -39,8 +34,9 @@ export const authenticate = (
 };
 
 /**
- * Middleware для проверки роли ADMIN.
- * Должен использоваться после authenticate.
+ * requireAdmin — проверка роли ADMIN.
+ * ИСПРАВЛЕНО: теперь работает, т.к. роль добавлена в JWT-пейлоад (auth.service).
+ * Должен использоваться ПОСЛЕ authenticate.
  */
 export const requireAdmin = (
   req: AuthenticatedRequest,

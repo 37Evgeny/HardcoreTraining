@@ -1,15 +1,16 @@
+import './ErrorMessage.css';
+
 /**
- * ErrorMessage — компонент для отображения ошибок с кнопкой повтора.
+ * ErrorMessage — отображение ошибки с кнопкой повтора.
+ *
+ * @param {string}   message  - текст ошибки
+ * @param {Function} onRetry  - колбэк повторной попытки (опционально)
  */
 const ErrorMessage = ({ message, onRetry }) => (
-  <div className="error-message" style={{
-    textAlign: 'center',
-    padding: '2rem',
-    color: '#e74c3c',
-  }}>
-    <p style={{ marginBottom: '1rem' }}>{message || 'Произошла ошибка'}</p>
+  <div className="error-message" role="alert">
+    <p className="error-message__text">{message || 'Произошла ошибка'}</p>
     {onRetry && (
-      <button onClick={onRetry} className="btn btn--primary">
+      <button type="button" onClick={onRetry} className="btn btn--primary">
         Попробовать снова
       </button>
     )}

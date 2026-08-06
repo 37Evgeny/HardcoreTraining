@@ -1,6 +1,3 @@
-// backend/src/modules/favorites/favorite.routes.ts
-// Маршруты для работы с избранными тренировками.
-
 import { Router } from 'express';
 import { z } from 'zod';
 import { authenticate } from '../../middleware/auth.middleware';
@@ -10,47 +7,20 @@ import * as favoriteController from './favorite.controller';
 const router = Router();
 
 /**
- * Zod-схема валидации workoutId в параметрах маршрута.
- * Тренировка должна быть UUID v4.
+ * Валидация workoutId в параметрах маршрута.
+ * ИСПРАВЛЕНО: убран .uuid() — совместимо со строковыми ID из seed.
  */
 const workoutIdParamSchema = z.object({
   workoutId: z
     .string()
-    .uuid('ID тренировки должен быть валидным UUID'),
+    .min(1, 'ID тренировки обязателен')
+    .max(100, 'ID тренировки слишком длинный')
+    .regex(/^[a-zA-Z0-9_-]+$/, 'Недопустимые символы в ID тренировки'),
 });
 
-/**
- * Все маршруты избранного требуют аутентификации.
- */
-
-/**
- * GET /api/favorites
- * Получить список избранных тренировок пользователя.
- */
+// Все маршруты избранного требуют аутентификации
 router.get('/', authenticate, favoriteController.getFavorites);
-
-/**
- * POST /api/favorites/:workoutId
- * Добавить тренировку в избранное.
- * Валидирует workoutId как UUID.
- */
-router.post(
-  '/:workoutId',
-  authenticate,
-  validate(workoutIdParamSchema, 'params'),
-  favoriteController.addFavorite,
-);
-
-/**
- * DELETE /api/favorites/:workoutId
- * Удалить тренировку из избранного.
- * Валидирует workoutId как UUID.
- */
-router.delete(
-  '/:workoutId',
-  authenticate,
-  validate(workoutIdParamSchema, 'params'),
-  favoriteController.removeFavorite,
-);
+router.post('/:workoutId', authenticate, validate(workoutIdParamSchema, 'params'), favoriteController.addFavorite);
+router.delete('/:workoutId', authenticate, validate(workoutIdParamSchema, 'params'), favoriteController.removeFavorite);
 
 export default router;

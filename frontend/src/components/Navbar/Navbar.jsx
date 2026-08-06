@@ -1,62 +1,63 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-// ИСПРАВЛЕНО: деструктуризация { isDark, toggleTheme } вместо { theme, toggleTheme }
 import { useTheme } from '../../context/ThemeContext';
 import './Navbar.css';
 
 /**
- * Navbar — навигационная панель приложения.
- * Отображает ссылки на основные разделы и кнопку переключения темы.
- * @returns {JSX.Element}
+ * Navbar — навигационная панель.
  */
 const Navbar = () => {
   const { user, logout } = useAuth();
-  // ИСПРАВЛЕНО: ThemeContext экспортирует { isDark, toggleTheme }
   const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
-  /**
-   * Обработчик выхода из аккаунта.
-   */
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
+  // Базовый класс для NavLink + активное состояние
+  const linkClass = ({ isActive }) =>
+    `navbar__link${isActive ? ' navbar__link--active' : ''}`;
+
   return (
-    <nav className="navbar">
+    <nav className="navbar" aria-label="Основная навигация">
       <div className="navbar__container">
-        <Link to="/" className="navbar__logo">
+        <NavLink to="/" className="navbar__logo">
           HardcoreTraining
-        </Link>
+        </NavLink>
 
         <div className="navbar__links">
-          <Link to="/" className="navbar__link">
+          <NavLink to="/" className={linkClass} end>
             Тренировки
-          </Link>
+          </NavLink>
 
           {user ? (
             <>
-              <Link to="/profile" className="navbar__link">
+              <NavLink to="/profile" className={linkClass}>
                 Профиль
-              </Link>
-              <button onClick={handleLogout} className="navbar__link navbar__link--btn">
+              </NavLink>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="navbar__link navbar__link--btn"
+              >
                 Выйти
               </button>
             </>
           ) : (
             <>
-              <Link to="/login" className="navbar__link">
+              <NavLink to="/login" className={linkClass}>
                 Войти
-              </Link>
-              <Link to="/register" className="navbar__link">
+              </NavLink>
+              <NavLink to="/register" className={linkClass}>
                 Регистрация
-              </Link>
+              </NavLink>
             </>
           )}
 
-          {/* ИСПРАВЛЕНО: используем isDark вместо theme для определения текущей темы */}
           <button
+            type="button"
             onClick={toggleTheme}
             className="navbar__theme-toggle"
             aria-label={isDark ? 'Переключить на светлую тему' : 'Переключить на тёмную тему'}

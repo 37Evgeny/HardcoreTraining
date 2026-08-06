@@ -2,11 +2,15 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 import { login as apiLogin, register as apiRegister } from '../services/api';
 
 /**
- * Контекст аутентификации.
+ * AuthContext — глобальное состояние аутентификации.
  * Предоставляет: user, login, register, logout, isLoading.
  */
 const AuthContext = createContext(null);
 
+/**
+ * Хук доступа к контексту.
+ * Бросает ошибку, если используется вне AuthProvider.
+ */
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -20,8 +24,8 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   /**
-   * При монтировании проверяем, есть ли сохранённый токен.
-   * Если есть — пробуем загрузить данные пользователя.
+   * Восстановление сессии из localStorage при монтировании.
+   * Если данные повреждены — очищаем всё.
    */
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
@@ -29,10 +33,9 @@ export const AuthProvider = ({ children }) => {
 
     if (token && savedUser) {
       try {
-        const parsed = JSON.parse(savedUser);
-        setUser(parsed);
+        setUser(JSON.parse(savedUser));
       } catch {
-        // Если данные повреждены — очищаем
+        // Повреждённые данные — полная очистка
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
@@ -42,37 +45,31 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   /**
-   * Логин: отправляем запрос на бэкенд, сохраняем токены и пользователя.
+   * Логин. api.js возвращает { accessToken, refreshToken, user }.
    */
   const login = useCallback(async (email, password) => {
-    const response = await apiLogin({ email, password });
-    const { accessToken, refreshToken, user: userData } = response.data.data;
-
-    localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
-    localStorage.setItem('user', JSON.stringify(userData));
-
-    setUser(userData);
-    return userData;
+    const userData = await apiLogin({ email, password });
+    localStorage.setItem('accessToken', userData.accessToken);
+    localStorage.setItem('refreshToken', userData.refreshToken);
+    localStorage.setItem('user', JSON.stringify(userData.user));
+    setUser(userData.user);
+    return userData.user;
   }, []);
 
   /**
-   * Регистрация: отправляем запрос на бэкенд, сохраняем токены и пользователя.
+   * Регистрация.
    */
   const register = useCallback(async (email, password, name) => {
-    const response = await apiRegister({ email, password, name });
-    const { accessToken, refreshToken, user: userData } = response.data.data;
-
-    localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
-    localStorage.setItem('user', JSON.stringify(userData));
-
-    setUser(userData);
-    return userData;
+    const userData = await apiRegister({ email, password, name });
+    localStorage.setItem('accessToken', userData.accessToken);
+    localStorage.setItem('refreshToken', userData.refreshToken);
+    localStorage.setItem('user', JSON.stringify(userData.user));
+    setUser(userData.user);
+    return userData.user;
   }, []);
 
   /**
-   * Логаут: очищаем все данные и токены.
+   * Выход: очистка всех данных.
    */
   const logout = useCallback(() => {
     localStorage.removeItem('accessToken');

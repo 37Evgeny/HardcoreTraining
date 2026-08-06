@@ -3,7 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 /**
- * Страница входа в систему.
+ * LoginPage — страница входа.
+ * Логика корректна: login() из AuthContext возвращает данные,
+ * api.js уже разворачивает ответ.
  */
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -29,89 +31,49 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="container" style={{ maxWidth: '400px', marginTop: '80px' }}>
-      <div className="card" style={{ padding: '40px' }}>
-        <h2 style={{ textAlign: 'center', marginBottom: '8px' }}>🔐 Вход</h2>
-        <p style={{ textAlign: 'center', color: 'var(--text-tertiary)', marginBottom: '30px' }}>
-          Войдите в свой аккаунт
-        </p>
+    <div className="container login-page">
+      <div className="card login-page__card">
+        <h2 className="login-page__title">🔐 Вход</h2>
+        <p className="login-page__subtitle">Войдите в свой аккаунт</p>
 
         {error && (
-          <div style={{
-            padding: '12px',
-            background: 'var(--accent-red-bg)',
-            border: '1px solid rgba(231, 76, 60, 0.3)',
-            borderRadius: 'var(--radius-sm)',
-            color: 'var(--accent-red)',
-            marginBottom: '20px',
-            fontSize: 'var(--text-sm)',
-          }}>
-            {error}
-          </div>
+          <div className="login-page__error" role="alert">{error}</div>
         )}
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div>
-            <label style={{ display: 'block', marginBottom: '6px', color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>
-              Email
-            </label>
+        <form onSubmit={handleSubmit} className="login-page__form" noValidate>
+          <div className="form-group">
+            <label htmlFor="email">Email</label>
             <input
+              id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                background: 'var(--bg-input)',
-                border: '1px solid var(--border-default)',
-                borderRadius: 'var(--radius-sm)',
-                color: 'var(--text-primary)',
-                fontSize: 'var(--text-base)',
-                fontFamily: 'var(--font-sans)',
-              }}
+              autoComplete="email"
               placeholder="your@email.com"
             />
           </div>
 
-          <div>
-            <label style={{ display: 'block', marginBottom: '6px', color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>
-              Пароль
-            </label>
+          <div className="form-group">
+            <label htmlFor="password">Пароль</label>
             <input
+              id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                background: 'var(--bg-input)',
-                border: '1px solid var(--border-default)',
-                borderRadius: 'var(--radius-sm)',
-                color: 'var(--text-primary)',
-                fontSize: 'var(--text-base)',
-                fontFamily: 'var(--font-sans)',
-              }}
+              autoComplete="current-password"
               placeholder="••••••••"
             />
           </div>
 
-          <button
-            type="submit"
-            className="btn btn-primary"
-            disabled={isSubmitting}
-            style={{ width: '100%', marginTop: '8px', opacity: isSubmitting ? 0.7 : 1 }}
-          >
+          <button type="submit" className="btn btn-primary login-page__submit" disabled={isSubmitting}>
             {isSubmitting ? 'Вход...' : '🚀 Войти'}
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: '20px', color: 'var(--text-tertiary)', fontSize: 'var(--text-sm)' }}>
-          Нет аккаунта?{' '}
-          <Link to="/register" style={{ color: 'var(--accent-red)' }}>
-            Зарегистрироваться
-          </Link>
+        <p className="login-page__register-link">
+          Нет аккаунта? <Link to="/register">Зарегистрироваться</Link>
         </p>
       </div>
     </div>

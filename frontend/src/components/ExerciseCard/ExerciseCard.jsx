@@ -1,58 +1,44 @@
+import './ExerciseCard.css';
 
+/**
+ * ExerciseCard — карточка упражнения.
+ *
+ * @param {Object} exercise - { name, instructions, safetyTip, sets, reps, restSeconds }
+ */
 const ExerciseCard = ({ exercise }) => {
+  // Дефолтные значения защищают от undefined/null в данных с бэкенда
+  const {
+    name = 'Упражнение',
+    instructions = '',
+    safetyTip = null,
+    sets = '—',
+    reps = '—',
+    restSeconds = '—',
+  } = exercise || {};
+
   return (
-    <div className="card">
-      <h4 style={{ marginBottom: '8px', color: 'var(--text-primary)' }}>
-        {exercise.name}
-      </h4>
-      <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-        {exercise.instructions}
-      </p>
-      {exercise.safetyTip && (
-        <p style={{
-          color: 'var(--accent-red)',
-          fontSize: 'var(--text-xs)',
-          marginTop: '10px',
-          padding: '8px 12px',
-          background: 'var(--accent-red-bg)',
-          borderRadius: 'var(--radius-sm)',
-          border: '1px solid rgba(231, 76, 60, 0.15)'
-        }}>
-          ⚠️ {exercise.safetyTip}
+    <div className="card exercise-card">
+      <h4 className="exercise-card__title">{name}</h4>
+      <p className="exercise-card__instructions">{instructions}</p>
+
+      {safetyTip && (
+        <p className="exercise-card__safety" role="note">
+          ⚠️ {safetyTip}
         </p>
       )}
-      <div style={{
-        display: 'flex',
-        gap: '16px',
-        marginTop: '14px',
-        flexWrap: 'wrap'
-      }}>
-        <div style={{
-          padding: '6px 14px',
-          background: 'rgba(255,255,255,0.04)',
-          borderRadius: 'var(--radius-sm)',
-          fontSize: 'var(--text-sm)'
-        }}>
-          <span style={{ color: 'var(--text-tertiary)' }}>Подходы: </span>
-          <strong style={{ color: 'var(--text-primary)' }}>{exercise.sets}</strong>
+
+      <div className="exercise-card__meta">
+        <div className="exercise-card__meta-item">
+          <span className="exercise-card__meta-label">Подходы: </span>
+          <strong>{sets}</strong>
         </div>
-        <div style={{
-          padding: '6px 14px',
-          background: 'rgba(255,255,255,0.04)',
-          borderRadius: 'var(--radius-sm)',
-          fontSize: 'var(--text-sm)'
-        }}>
-          <span style={{ color: 'var(--text-tertiary)' }}>Повторения: </span>
-          <strong style={{ color: 'var(--text-primary)' }}>{exercise.reps}</strong>
+        <div className="exercise-card__meta-item">
+          <span className="exercise-card__meta-label">Повторения: </span>
+          <strong>{reps}</strong>
         </div>
-        <div style={{
-          padding: '6px 14px',
-          background: 'rgba(255,255,255,0.04)',
-          borderRadius: 'var(--radius-sm)',
-          fontSize: 'var(--text-sm)'
-        }}>
-          <span style={{ color: 'var(--text-tertiary)' }}>Отдых: </span>
-          <strong style={{ color: 'var(--text-primary)' }}>{exercise.restSeconds} сек</strong>
+        <div className="exercise-card__meta-item">
+          <span className="exercise-card__meta-label">Отдых: </span>
+          <strong>{restSeconds} сек</strong>
         </div>
       </div>
     </div>

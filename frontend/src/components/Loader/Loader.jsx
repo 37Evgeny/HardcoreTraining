@@ -1,21 +1,13 @@
+import './Loader.css';
+
 /**
- * Loader — компонент-заглушка для состояния загрузки.
+ * Loader — индикатор загрузки.
+ * @param {string} [label] - текст под спиннером (опционально)
  */
-const Loader = () => (
-  <div className="loader" style={{
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: '4rem',
-  }}>
-    <div className="spinner" style={{
-      width: '40px',
-      height: '40px',
-      border: '4px solid var(--color-border)',
-      borderTopColor: 'var(--color-primary)',
-      borderRadius: '50%',
-      animation: 'spin 0.8s linear infinite',
-    }} />
+const Loader = ({ label = 'Загрузка...' }) => (
+  <div className="loader" role="status" aria-live="polite">
+    <div className="loader__spinner" aria-hidden="true" />
+    <p className="loader__label">{label}</p>
   </div>
 );
 

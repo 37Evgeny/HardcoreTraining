@@ -1,21 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-// ИСПРАВЛЕНО: импортируем из существующего services/api
 import ErrorMessage from '../../components/ErrorMessage/ErrorMessage';
 import ExerciseCard from '../../components/ExerciseCard/ExerciseCard';
 import Loader from '../../components/Loader/Loader';
 import Timer from '../../components/Timer/Timer';
-import {
-  finishSession,
-  getWorkoutById,
-  startSession,
-} from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
+import { finishSession, getWorkoutById, startSession } from '../../services/api';
 import './WorkoutPage.css';
 
 /**
- * WorkoutPage — страница детального просмотра и выполнения тренировки.
- * @returns {JSX.Element}
+ * WorkoutPage — детальный просмотр и выполнение тренировки.
  */
 const WorkoutPage = () => {
   const { id } = useParams();
@@ -30,44 +24,35 @@ const WorkoutPage = () => {
   const [sessionFinished, setSessionFinished] = useState(false);
 
   /**
-   * Загружает данные тренировки по ID из URL.
+   * Загрузка тренировки.
+   * ИСПРАВЛЕНО: getWorkoutById возвращает данные напрямую (res.data.data).
    */
   useEffect(() => {
     const fetchWorkout = async () => {
       try {
         setLoading(true);
         setError(null);
-
         const data = await getWorkoutById(id);
-        if (!data) {
-          throw new Error('Тренировка не найдена');
-        }
+        if (!data) throw new Error('Тренировка не найдена');
         setWorkout(data);
       } catch (err) {
         console.error('Ошибка загрузки тренировки:', err);
-        setError(
-          err.response?.data?.message ||
-            'Не удалось загрузить тренировку. Попробуйте позже.'
-        );
+        setError(err.response?.data?.message || 'Не удалось загрузить тренировку. Попробуйте позже.');
       } finally {
         setLoading(false);
       }
     };
-
     fetchWorkout();
   }, [id]);
 
   /**
-   * Начинает новую сессию тренировки.
+   * Начало сессии.
+   * ИСПРАВЛЕНО: startSession принимает { workoutId } и возвращает данные.
    */
   const handleStartSession = useCallback(async () => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-
+    if (!user) { navigate('/login'); return; }
     try {
-      const session = await startSession(id);
+      const session = await startSession({ workoutId: id });
       setSessionId(session.id);
       setCurrentExerciseIndex(0);
     } catch (err) {
@@ -77,11 +62,10 @@ const WorkoutPage = () => {
   }, [id, user, navigate]);
 
   /**
-   * Завершает текущую сессию тренировки.
+   * Завершение сессии.
    */
   const handleFinishSession = useCallback(async () => {
     if (!sessionId) return;
-
     try {
       await finishSession(sessionId);
       setSessionFinished(true);
@@ -92,42 +76,25 @@ const WorkoutPage = () => {
     }
   }, [sessionId]);
 
-  /**
-   * Переход к следующему упражнению.
-   */
   const handleNextExercise = useCallback(() => {
     if (!workout) return;
-
     if (currentExerciseIndex < workout.exercises.length - 1) {
       setCurrentExerciseIndex((prev) => prev + 1);
     } else {
-      // Все упражнения выполнены
       handleFinishSession();
     }
   }, [workout, currentExerciseIndex, handleFinishSession]);
 
-  // Состояние загрузки
-  if (loading) {
-    return <Loader />;
-  }
+  if (loading) return <Loader />;
+  if (error) return <ErrorMessage message={error} onRetry={() => window.location.reload()} />;
+  if (!workout) return <ErrorMessage message="Тренировка не найдена" />;
 
-  // Состояние ошибки
-  if (error) {
-    return <ErrorMessage message={error} onRetry={() => window.location.reload()} />;
-  }
-
-  // Тренировка не найдена
-  if (!workout) {
-    return <ErrorMessage message="Тренировка не найдена" />;
-  }
-
-  // Сессия завершена
   if (sessionFinished) {
     return (
       <div className="workout-page__finished">
         <h2>🎉 Тренировка завершена!</h2>
         <p>Отличная работа! Вы выполнили все упражнения.</p>
-        <button onClick={() => navigate('/')} className="btn btn--primary">
+        <button type="button" onClick={() => navigate('/')} className="btn btn--primary">
           Вернуться к списку
         </button>
       </div>
@@ -138,20 +105,18 @@ const WorkoutPage = () => {
 
   return (
     <div className="workout-page">
-      <h1 className="workout-page__title">{workout.name}</h1>
+      {/* ИСПРАВЛЕНО: бэкенд возвращает title, а не name */}
+      <h1 className="workout-page__title">{workout.title}</h1>
       <p className="workout-page__description">{workout.description}</p>
 
       {!sessionId ? (
-        <button
-          onClick={handleStartSession}
-          className="btn btn--primary workout-page__start-btn"
-        >
+        <button type="button" onClick={handleStartSession} className="btn btn--primary workout-page__start-btn">
           Начать тренировку
         </button>
       ) : (
         <div className="workout-page__session">
           <Timer
-            duration={workout.duration || 60}
+            duration={workout.durationMinutes || 60}
             showSettings={false}
             onComplete={handleNextExercise}
           />
@@ -166,18 +131,12 @@ const WorkoutPage = () => {
           )}
 
           <div className="workout-page__actions">
-            <button
-              onClick={handleNextExercise}
-              className="btn btn--primary"
-            >
+            <button type="button" onClick={handleNextExercise} className="btn btn--primary">
               {currentExerciseIndex < workout.exercises.length - 1
                 ? 'Следующее упражнение'
                 : 'Завершить тренировку'}
             </button>
-            <button
-              onClick={handleFinishSession}
-              className="btn btn--secondary"
-            >
+            <button type="button" onClick={handleFinishSession} className="btn btn--secondary">
               Завершить досрочно
             </button>
           </div>

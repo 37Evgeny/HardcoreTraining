@@ -1,33 +1,27 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-// ИСПРАВЛЕНО: импортируем из существующего services/api, а не из несуществующей api/
 import ErrorMessage from '../../components/ErrorMessage/ErrorMessage';
 import Loader from '../../components/Loader/Loader';
 import WorkoutCard from '../../components/WorkoutCard/WorkoutCard';
-import {
-  addFavorite,
-  getFavorites,
-  getWorkouts,
-  removeFavorite,
-} from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
+import { addFavorite, getFavorites, getWorkouts, removeFavorite } from '../../services/api';
 import './HomePage.css';
 
 /**
  * HomePage — главная страница со списком тренировок и избранным.
- * @returns {JSX.Element}
  */
 const HomePage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
   const [workouts, setWorkouts] = useState([]);
-  const [favorites, setFavorites] = useState([]);
+  const [favorites, setFavorites] = useState([]); // массив ID избранных тренировок
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   /**
-   * Загружает список тренировок и избранного при монтировании.
+   * Загрузка тренировок и избранного.
+   * ИСПРАВЛЕНО: api.js теперь возвращает данные напрямую (res.data.data).
    */
   useEffect(() => {
     const fetchData = async () => {
@@ -35,20 +29,17 @@ const HomePage = () => {
         setLoading(true);
         setError(null);
 
-        // Параллельная загрузка тренировок и избранного
-        const [workoutsRes, favoritesRes] = await Promise.all([
+        const [workoutsData, favoritesData] = await Promise.all([
           getWorkouts(),
-          user ? getFavorites() : Promise.resolve({ data: [] }),
+          user ? getFavorites() : Promise.resolve([]),
         ]);
 
-        setWorkouts(workoutsRes.data);
-        setFavorites(favoritesRes.data);
+        setWorkouts(workoutsData);
+        // ИСПРАВЛЕНО: храним только ID избранных тренировок (единый формат)
+        setFavorites(favoritesData.map((fav) => fav.id));
       } catch (err) {
         console.error('Ошибка загрузки данных HomePage:', err);
-        setError(
-          err.response?.data?.message ||
-            'Не удалось загрузить тренировки. Попробуйте позже.'
-        );
+        setError(err.response?.data?.message || 'Не удалось загрузить тренировки. Попробуйте позже.');
       } finally {
         setLoading(false);
       }
@@ -57,35 +48,26 @@ const HomePage = () => {
     fetchData();
   }, [user]);
 
-  /**
-   * Проверяет, находится ли тренировка в избранном.
-   * @param {string} workoutId — ID тренировки
-   * @returns {boolean}
-   */
   const isFavorite = useCallback(
-    (workoutId) => favorites.some((fav) => fav.workoutId === workoutId),
+    (workoutId) => favorites.includes(workoutId),
     [favorites]
   );
 
   /**
-   * Обработчик добавления/удаления из избранного.
-   * @param {string} workoutId — ID тренировки
+   * Переключение избранного.
+   * ИСПРАВЛЕНО: removeFavorite/addFavorite принимают workoutId (не fav.id).
    */
   const handleToggleFavorite = useCallback(
     async (workoutId) => {
-      if (!user) {
-        navigate('/login');
-        return;
-      }
+      if (!user) { navigate('/login'); return; }
 
       try {
         if (isFavorite(workoutId)) {
-          const fav = favorites.find((f) => f.workoutId === workoutId);
-          await removeFavorite(fav.id);
-          setFavorites((prev) => prev.filter((f) => f.workoutId !== workoutId));
+          await removeFavorite(workoutId);
+          setFavorites((prev) => prev.filter((id) => id !== workoutId));
         } else {
-          const newFavRes = await addFavorite(workoutId);
-          setFavorites((prev) => [...prev, newFavRes.data]);
+          await addFavorite(workoutId);
+          setFavorites((prev) => [...prev, workoutId]);
         }
       } catch (err) {
         console.error('Ошибка переключения избранного:', err);
@@ -96,25 +78,16 @@ const HomePage = () => {
   );
 
   /**
-   * Обработчик клика по карточке тренировки.
-   * @param {string} workoutId — ID тренировки
+   * Переход к тренировке.
+   * ИСПРАВЛЕНО: маршрут /workout/:id (совпадает с App.jsx).
    */
   const handleWorkoutClick = useCallback(
-    (workoutId) => {
-      navigate(`/workouts/${workoutId}`);
-    },
+    (workoutId) => navigate(`/workout/${workoutId}`),
     [navigate]
   );
 
-  // Состояние загрузки
-  if (loading) {
-    return <Loader />;
-  }
-
-  // Состояние ошибки
-  if (error) {
-    return <ErrorMessage message={error} onRetry={() => window.location.reload()} />;
-  }
+  if (loading) return <Loader />;
+  if (error) return <ErrorMessage message={error} onRetry={() => window.location.reload()} />;
 
   return (
     <div className="home-page">

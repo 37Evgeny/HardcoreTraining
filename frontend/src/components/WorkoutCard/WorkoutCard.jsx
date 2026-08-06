@@ -1,54 +1,54 @@
+import { getLevelBgColor, getLevelColor, getLevelLabel } from '../../utils/levels';
 import './WorkoutCard.css';
 
-const WorkoutCard = ({ workout, icon, levelLabel, onClick }) => {
-  const levelColors = {
-    'BEGINNER': '#2ecc71',
-    'INTERMEDIATE': '#f1c40f',
-    'ADVANCED': '#e74c3c'
-  };
+/**
+ * WorkoutCard — карточка тренировки.
+ *
+ * @param {Object}   workout - объект тренировки
+ * @param {string}   icon    - эмодзи-иконка
+ * @param {Function} onClick - обработчик клика
+ */
+const WorkoutCard = ({ workout, icon, onClick }) => {
+  // Defensive: защита от undefined полей
+  const {
+    title = 'Без названия',
+    description = '',
+    level = 'BEGINNER',
+    durationMinutes = 0,
+    exercises = [],
+  } = workout || {};
 
-  const levelBgColors = {
-    'BEGINNER': 'rgba(46, 204, 113, 0.15)',
-    'INTERMEDIATE': 'rgba(241, 196, 15, 0.15)',
-    'ADVANCED': 'rgba(231, 76, 60, 0.15)'
-  };
+  // Обрезка описания до 80 символов
+  const shortDescription =
+    description.length > 80 ? `${description.slice(0, 80)}...` : description;
 
   return (
-    <div className="workout-card" onClick={onClick}>
-      <div
-        className="card-accent"
-        style={{ background: levelColors[workout.level] }}
-      />
+    <article
+      className="workout-card"
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick?.(); }}
+    >
+      <div className="card-accent" style={{ background: getLevelColor(level) }} />
       <div className="card-icon-wrapper">
         <span className="card-icon">{icon}</span>
       </div>
       <div className="card-body">
-        <h3 className="card-title">{workout.title}</h3>
-        <p className="card-description">
-          {workout.description.length > 80
-            ? workout.description.slice(0, 80) + '...'
-            : workout.description
-          }
-        </p>
+        <h3 className="card-title">{title}</h3>
+        <p className="card-description">{shortDescription}</p>
         <div className="card-tags">
           <span
             className="card-tag level-tag"
-            style={{
-              color: levelColors[workout.level],
-              background: levelBgColors[workout.level]
-            }}
+            style={{ color: getLevelColor(level), background: getLevelBgColor(level) }}
           >
-            {levelLabel}
+            {getLevelLabel(level)}
           </span>
-          <span className="card-tag">
-            ⏱ {workout.durationMinutes} мин
-          </span>
-          <span className="card-tag">
-            🏋️ {workout.exercises?.length || 0} упр.
-          </span>
+          <span className="card-tag">⏱ {durationMinutes} мин</span>
+          <span className="card-tag">🏋️ {exercises.length} упр.</span>
         </div>
       </div>
-    </div>
+    </article>
   );
 };
 

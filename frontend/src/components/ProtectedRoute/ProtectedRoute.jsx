@@ -1,30 +1,26 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import Loader from '../Loader/Loader';
 
 /**
- * Компонент-обёртка для защиты маршрутов.
- * Если пользователь не авторизован — перенаправляет на /login.
+ * ProtectedRoute — защита приватных маршрутов.
+ * @param {React.ReactNode} children - защищаемый контент
  */
 const ProtectedRoute = ({ children }) => {
   const { user, isLoading } = useAuth();
   const location = useLocation();
 
-  // Пока проверяем авторизацию — показываем заглушку
+  // Пока проверяем авторизацию — показываем Loader (переиспользуем)
   if (isLoading) {
-    return (
-      <div className="container loading-container">
-        <div className="spinner"></div>
-        <p>Проверка авторизации...</p>
-      </div>
-    );
+    return <Loader label="Проверка авторизации..." />;
   }
 
-  // Если не авторизован — редирект на логин с сохранением исходного URL
+  // Не авторизован — редирект на логин с сохранением исходного URL
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  return children;
+  return children ?? null;
 };
 
 export default ProtectedRoute;
