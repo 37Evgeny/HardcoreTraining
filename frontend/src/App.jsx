@@ -34,15 +34,8 @@ function AnimatedRoutes() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
 
-          {/* Защищённые маршруты (только для авторизованных) */}
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <HomePage />
-              </ProtectedRoute>
-            }
-          />
+          {/* Публичный маршрут — главная с тренировками */}
+          <Route path="/" element={<HomePage />} />
           <Route
             path="/workout/:id"
             element={

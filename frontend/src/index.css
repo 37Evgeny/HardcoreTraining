@@ -47,6 +47,35 @@
   --transition-bounce: 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
+
+/* ---------- Светлая тема ---------- */
+[data-theme="light"] {
+  --color-primary: #e63946;
+  --color-primary-hover: #c1121f;
+  --color-primary-light: rgba(230, 57, 70, 0.1);
+  --color-secondary: #457b9d;
+  --color-secondary-hover: #1d3557;
+  --color-accent: #f4a261;
+  --color-success: #2a9d8f;
+  --color-warning: #e9c46a;
+  --color-danger: #e63946;
+  --color-bg: #f8f9fa;
+  --color-bg-secondary: #ffffff;
+  --color-bg-card: #ffffff;
+  --color-bg-hover: #e9ecef;
+  --color-text: #212529;
+  --color-text-secondary: #6c757d;
+  --color-text-muted: #adb5bd;
+  --color-border: #dee2e6;
+  --color-overlay: rgba(0, 0, 0, 0.5);
+  --color-white: #ffffff;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.15);
+  --shadow-glow: 0 0 20px rgba(230, 57, 70, 0.2);
+}
+
+
 /* ---------- Сброс и база ---------- */
 *,
 *::before,
@@ -279,7 +308,6 @@ label {
   to {
     opacity: 1;
     transform: translateY(0);
-  }
 }
 
 /* Появление сверху вниз */

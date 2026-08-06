@@ -1,143 +1,171 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+// ИСПРАВЛЕНО: путь '../../context/AuthContext' (поднимаемся из pages/RegisterPage/ -> src/)
+import { useAuth } from '../../context/AuthContext';
+import './RegisterPage.css';
 
 /**
- * Страница регистрации.
+ * RegisterPage — страница регистрации нового пользователя.
+ * @returns {JSX.Element}
  */
 const RegisterPage = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
 
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    confirmPassword: '',
+    name: '',
+  });
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  /**
+   * Валидирует форму перед отправкой.
+   * @returns {string|null} — сообщение об ошибке или null
+   */
+  const validateForm = () => {
+    const { email, password, confirmPassword, name } = formData;
+
+    if (!name.trim()) return 'Имя обязательно для заполнения';
+    if (!email.trim()) return 'Email обязателен для заполнения';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Некорректный формат email';
+    if (!password) return 'Пароль обязателен для заполнения';
+    if (password.length < 8) return 'Пароль должен содержать минимум 8 символов';
+    if (password !== confirmPassword) return 'Пароли не совпадают';
+
+    return null;
+  };
+
+  /**
+   * Обработчик изменения полей формы.
+   * @param {React.ChangeEvent<HTMLInputElement>} e
+   */
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    // Сбрасываем ошибку при изменении поля
+    if (error) setError(null);
+  };
+
+  /**
+   * Обработчик отправки формы регистрации.
+   * @param {React.FormEvent<HTMLFormElement>} e
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setIsSubmitting(true);
+
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
 
     try {
-      await register(email, password, name || undefined);
+      setLoading(true);
+      setError(null);
+
+      await register(
+        formData.email,
+        formData.password,
+        formData.name
+      );
+
+      // После успешной регистрации перенаправляем на главную
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Ошибка регистрации. Попробуйте другой email.');
+      console.error('Ошибка регистрации:', err);
+      setError(
+        err.response?.data?.message ||
+          'Не удалось зарегистрироваться. Попробуйте позже.'
+      );
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="container" style={{ maxWidth: '400px', marginTop: '80px' }}>
-      <div className="card" style={{ padding: '40px' }}>
-        <h2 style={{ textAlign: 'center', marginBottom: '8px' }}>📝 Регистрация</h2>
-        <p style={{ textAlign: 'center', color: 'var(--text-tertiary)', marginBottom: '30px' }}>
-          Создайте аккаунт
-        </p>
+    <div className="register-page">
+      <h1 className="register-page__title">Регистрация</h1>
 
+      <form onSubmit={handleSubmit} className="register-page__form" noValidate>
         {error && (
-          <div style={{
-            padding: '12px',
-            background: 'var(--accent-red-bg)',
-            border: '1px solid rgba(231, 76, 60, 0.3)',
-            borderRadius: 'var(--radius-sm)',
-            color: 'var(--accent-red)',
-            marginBottom: '20px',
-            fontSize: 'var(--text-sm)',
-          }}>
+          <div className="register-page__error" role="alert">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div>
-            <label style={{ display: 'block', marginBottom: '6px', color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>
-              Имя (необязательно)
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                background: 'var(--bg-input)',
-                border: '1px solid var(--border-default)',
-                borderRadius: 'var(--radius-sm)',
-                color: 'var(--text-primary)',
-                fontSize: 'var(--text-base)',
-                fontFamily: 'var(--font-sans)',
-              }}
-              placeholder="Иван"
-            />
-          </div>
+        <div className="form-group">
+          <label htmlFor="name">Имя</label>
+          <input
+            id="name"
+            name="name"
+            type="text"
+            value={formData.name}
+            onChange={handleChange}
+            placeholder="Ваше имя"
+            required
+            autoComplete="name"
+          />
+        </div>
 
-          <div>
-            <label style={{ display: 'block', marginBottom: '6px', color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>
-              Email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                background: 'var(--bg-input)',
-                border: '1px solid var(--border-default)',
-                borderRadius: 'var(--radius-sm)',
-                color: 'var(--text-primary)',
-                fontSize: 'var(--text-base)',
-                fontFamily: 'var(--font-sans)',
-              }}
-              placeholder="your@email.com"
-            />
-          </div>
+        <div className="form-group">
+          <label htmlFor="email">Email</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="example@mail.com"
+            required
+            autoComplete="email"
+          />
+        </div>
 
-          <div>
-            <label style={{ display: 'block', marginBottom: '6px', color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>
-              Пароль
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                background: 'var(--bg-input)',
-                border: '1px solid var(--border-default)',
-                borderRadius: 'var(--radius-sm)',
-                color: 'var(--text-primary)',
-                fontSize: 'var(--text-base)',
-                fontFamily: 'var(--font-sans)',
-              }}
-              placeholder="Минимум 8 символов"
-            />
-          </div>
+        <div className="form-group">
+          <label htmlFor="password">Пароль</label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="Минимум 8 символов"
+            required
+            minLength={8}
+            autoComplete="new-password"
+          />
+        </div>
 
-          <button
-            type="submit"
-            className="btn btn-primary"
-            disabled={isSubmitting}
-            style={{ width: '100%', marginTop: '8px', opacity: isSubmitting ? 0.7 : 1 }}
-          >
-            {isSubmitting ? 'Регистрация...' : '✅ Создать аккаунт'}
-          </button>
-        </form>
+        <div className="form-group">
+          <label htmlFor="confirmPassword">Подтвердите пароль</label>
+          <input
+            id="confirmPassword"
+            name="confirmPassword"
+            type="password"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            placeholder="Повторите пароль"
+            required
+            minLength={8}
+            autoComplete="new-password"
+          />
+        </div>
 
-        <p style={{ textAlign: 'center', marginTop: '20px', color: 'var(--text-tertiary)', fontSize: 'var(--text-sm)' }}>
-          Уже есть аккаунт?{' '}
-          <Link to="/login" style={{ color: 'var(--accent-red)' }}>
-            Войти
-          </Link>
+        <button
+          type="submit"
+          className="btn btn--primary register-page__submit"
+          disabled={loading}
+        >
+          {loading ? 'Регистрация...' : 'Зарегистрироваться'}
+        </button>
+
+        <p className="register-page__login-link">
+          Уже есть аккаунт? <Link to="/login">Войти</Link>
         </p>
-      </div>
+      </form>
     </div>
   );
 };

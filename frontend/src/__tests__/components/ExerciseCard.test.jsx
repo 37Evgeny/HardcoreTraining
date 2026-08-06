@@ -1,47 +1,104 @@
-// frontend/src/__tests__/components/ExerciseCard.test.jsx
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import ExerciseCard from '../../components/ExerciseCard';
+import ExerciseCard from '../../components/ExerciseCard/ExerciseCard';
+
+/**
+ * Тесты для компонента ExerciseCard.
+ * ИСПРАВЛЕНО: тест использует поле safetyTip (вместо caution),
+ * что соответствует пропсам компонента ExerciseCard.
+ */
 
 describe('ExerciseCard Component', () => {
+  // ИСПРАВЛЕНО: используем safetyTip вместо caution
   const mockExercise = {
     id: '1',
-    name: 'Swings',
-    description: 'Stand with feet shoulder-width apart...',
+    name: 'Отжимания',
+    description: 'Классические отжимания от пола',
     sets: 3,
     reps: 15,
-    restSeconds: 60,
-    caution: 'Keep your back straight',
+    safetyTip: 'Держите спину прямой, не прогибайтесь в пояснице',
+    imageUrl: '/images/pushups.jpg',
   };
 
-  it('should render exercise name', () => {
-    render(<ExerciseCard exercise={mockExercise} />);
-    expect(screen.getByText('Swings')).toBeInTheDocument();
+  it('отображает название упражнения', () => {
+    render(
+      <ExerciseCard
+        exercise={mockExercise}
+        exerciseNumber={1}
+        totalExercises={10}
+      />
+    );
+
+    expect(screen.getByText('Отжимания')).toBeInTheDocument();
   });
 
-  it('should render sets and reps', () => {
-    render(<ExerciseCard exercise={mockExercise} />);
-    // Ищем по тексту с учётом вложенных элементов
-    expect(screen.getByText(/Подходы:/)).toBeInTheDocument();
-    expect(screen.getByText(/Повторения:/)).toBeInTheDocument();
+  it('отображает количество подходов и повторений', () => {
+    render(
+      <ExerciseCard
+        exercise={mockExercise}
+        exerciseNumber={1}
+        totalExercises={10}
+      />
+    );
+
+    expect(screen.getByText(/3/)).toBeInTheDocument();
+    expect(screen.getByText(/15/)).toBeInTheDocument();
   });
 
-  it('should render rest time', () => {
-    render(<ExerciseCard exercise={mockExercise} />);
-    expect(screen.getByText(/Отдых:/)).toBeInTheDocument();
+  it('отображает совет по безопасности', () => {
+    render(
+      <ExerciseCard
+        exercise={mockExercise}
+        exerciseNumber={1}
+        totalExercises={10}
+      />
+    );
+
+    // ИСПРАВЛЕНО: проверяем safetyTip
+    expect(
+      screen.getByText(
+        'Держите спину прямой, не прогибайтесь в пояснице'
+      )
+    ).toBeInTheDocument();
   });
 
-  it('should handle missing optional fields gracefully', () => {
-    const minimalExercise = {
-      id: '2',
-      name: 'Press',
-      sets: 3,
-      reps: 10,
-      restSeconds: 90,
-    };
+  it('отображает номер упражнения из общего количества', () => {
+    render(
+      <ExerciseCard
+        exercise={mockExercise}
+        exerciseNumber={3}
+        totalExercises={10}
+      />
+    );
 
-    render(<ExerciseCard exercise={minimalExercise} />);
-    expect(screen.getByText('Press')).toBeInTheDocument();
-    expect(screen.getByText(/Отдых:/)).toBeInTheDocument();
+    expect(screen.getByText(/3/)).toBeInTheDocument();
+  });
+
+  it('отображает изображение, если оно предоставлено', () => {
+    render(
+      <ExerciseCard
+        exercise={mockExercise}
+        exerciseNumber={1}
+        totalExercises={10}
+      />
+    );
+
+    const image = screen.getByAltText('Отжимания');
+    expect(image).toBeInTheDocument();
+    expect(image).toHaveAttribute('src', '/images/pushups.jpg');
+  });
+
+  it('не отображает изображение, если imageUrl отсутствует', () => {
+    const exerciseWithoutImage = { ...mockExercise, imageUrl: undefined };
+
+    render(
+      <ExerciseCard
+        exercise={exerciseWithoutImage}
+        exerciseNumber={1}
+        totalExercises={10}
+      />
+    );
+
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
   });
 });

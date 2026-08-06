@@ -1,5 +1,5 @@
 /* ============================================================
-   Стили навигационной панели (Navbar)
+   Стили навигационной панели (Navbar) — BEM-нотация
    Адаптивность + hamburger-меню для мобильных
    ============================================================ */
 
@@ -16,7 +16,7 @@
   -webkit-backdrop-filter: blur(10px);
 }
 
-.navbar-container {
+.navbar__container {
   max-width: var(--max-width);
   margin: 0 auto;
   padding: 0 1rem;
@@ -27,7 +27,7 @@
 }
 
 /* Логотип */
-.navbar-logo {
+.navbar__logo {
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--color-text);
@@ -38,12 +38,12 @@
   transition: color var(--transition-fast);
 }
 
-.navbar-logo:hover {
+.navbar__logo:hover {
   color: var(--color-primary);
 }
 
 /* ---------- Hamburger-кнопка ---------- */
-.navbar-hamburger {
+.navbar__hamburger {
   display: none;
   flex-direction: column;
   justify-content: center;
@@ -59,15 +59,15 @@
   transition: background var(--transition-fast);
 }
 
-.navbar-hamburger:hover {
+.navbar__hamburger:hover {
   background: var(--color-bg-hover);
 }
 
-.navbar-hamburger:active {
+.navbar__hamburger:active {
   transform: scale(0.95);
 }
 
-.hamburger-line {
+.navbar__hamburger-line {
   display: block;
   width: 100%;
   height: 2px;
@@ -78,28 +78,28 @@
 }
 
 /* Анимация hamburger → крестик */
-.navbar-hamburger.active .hamburger-line:nth-child(1) {
+.navbar__hamburger.active .navbar__hamburger-line:nth-child(1) {
   transform: translateY(7px) rotate(45deg);
 }
 
-.navbar-hamburger.active .hamburger-line:nth-child(2) {
+.navbar__hamburger.active .navbar__hamburger-line:nth-child(2) {
   opacity: 0;
   transform: scaleX(0);
 }
 
-.navbar-hamburger.active .hamburger-line:nth-child(3) {
+.navbar__hamburger.active .navbar__hamburger-line:nth-child(3) {
   transform: translateY(-7px) rotate(-45deg);
 }
 
 /* ---------- Меню (десктоп) ---------- */
-.navbar-menu {
+.navbar__links {
   display: flex;
   align-items: center;
   gap: 1rem;
 }
 
 /* Ссылки */
-.navbar-link {
+.navbar__link {
   color: var(--color-text-secondary);
   text-decoration: none;
   font-size: 0.95rem;
@@ -109,13 +109,32 @@
   transition: all var(--transition-fast);
 }
 
-.navbar-link:hover {
+.navbar__link:hover {
+  color: var(--color-text);
+  background: var(--color-bg-hover);
+}
+
+/* Кнопка "Выйти" выглядит как ссылка */
+.navbar__link--btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--border-radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.navbar__link--btn:hover {
   color: var(--color-text);
   background: var(--color-bg-hover);
 }
 
 /* Кнопка темы */
-.navbar-theme-btn {
+.navbar__theme-toggle {
   background: none;
   border: none;
   font-size: 1.25rem;
@@ -126,7 +145,7 @@
   line-height: 1;
 }
 
-.navbar-theme-btn:hover {
+.navbar__theme-toggle:hover {
   background: var(--color-bg-hover);
 }
 
@@ -135,11 +154,11 @@
    ============================================================ */
 
 @media (max-width: 768px) {
-  .navbar-hamburger {
+  .navbar__hamburger {
     display: flex;
   }
 
-  .navbar-menu {
+  .navbar__links {
     position: fixed;
     top: var(--navbar-height);
     left: 0;
@@ -156,28 +175,30 @@
     box-shadow: var(--shadow-lg);
   }
 
-  .navbar-menu--open {
+  .navbar__links--open {
     transform: translateY(0);
     opacity: 1;
     visibility: visible;
   }
 
-  .navbar-link {
+  .navbar__link {
     width: 100%;
     text-align: center;
     padding: 0.75rem;
     font-size: 1rem;
   }
 
-  .navbar-theme-btn {
+  .navbar__link--btn {
+    width: 100%;
+    text-align: center;
+    padding: 0.75rem;
+    font-size: 1rem;
+  }
+
+  .navbar__theme-toggle {
     width: 100%;
     text-align: center;
     padding: 0.75rem;
     font-size: 1.1rem;
-  }
-
-  .navbar-menu .btn {
-    width: 100%;
-    justify-content: center;
   }
 }

@@ -1,28 +1,12 @@
-// frontend/src/__tests__/services/api.test.js
+import axios from 'axios';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('axios', () => {
-  const mockInstance = {
-    get: vi.fn(),
-    post: vi.fn(),
-    put: vi.fn(),
-    patch: vi.fn(),
-    delete: vi.fn(),
-    interceptors: {
-      request: { use: vi.fn() },
-      response: { use: vi.fn() },
-    },
-  };
+/**
+ * Мокаем axios для тестирования API-сервиса.
+ */
+vi.mock('axios');
 
-  return {
-    default: {
-      create: vi.fn(() => mockInstance),
-      __mockInstance: mockInstance,
-    },
-  };
-});
-
-import axios from 'axios';
+// Импортируем API-функции после мока
 import {
   finishSession,
   getWorkoutById,
@@ -32,120 +16,98 @@ import {
   startSession,
 } from '../../services/api';
 
-const mockAxiosInstance = axios.__mockInstance;
-
 describe('API Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('workoutsApi', () => {
-    it('getAll должен вызывать GET /workouts', async () => {
-      mockAxiosInstance.get.mockResolvedValue({
-        data: { success: true, data: [] },
-      });
+  describe('getWorkouts', () => {
+    it('отправляет GET запрос на /api/workouts', async () => {
+      const mockData = [{ id: '1', name: 'Test' }];
+      (axios.get as ReturnType<typeof vi.fn>).mockResolvedValue({ data: mockData });
 
-      const result = await getWorkouts({ page: 1, limit: 10 });
+      const result = await getWorkouts();
 
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith('/workouts', {
-        params: { page: 1, limit: 10 },
-      });
-      expect(result.data.success).toBe(true);
-    });
-
-    it('getById должен вызывать GET /workouts/:id', async () => {
-      mockAxiosInstance.get.mockResolvedValue({
-        data: { success: true, data: { id: 'w-1' } },
-      });
-
-      const result = await getWorkoutById('w-1');
-
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith('/workouts/w-1');
-      expect(result.data.data.id).toBe('w-1');
-    });
-
-    it('startSession должен вызывать POST /workouts/start', async () => {
-      mockAxiosInstance.post.mockResolvedValue({
-        data: { success: true, data: { id: 'session-1' } },
-      });
-
-      const result = await startSession({ workoutId: 'w-1' });
-
-      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/workouts/start', {
-        workoutId: 'w-1',
-      });
-      expect(result.data.data.id).toBe('session-1');
-    });
-
-    it('finishSession должен завершать сессию', async () => {
-      // ✅ Мокаем все HTTP-методы, чтобы тест сам определил,
-      // какой из них реально вызывает finishSession
-      mockAxiosInstance.post.mockResolvedValue({
-        data: { success: true },
-      });
-      mockAxiosInstance.put.mockResolvedValue({
-        data: { success: true },
-      });
-      mockAxiosInstance.patch.mockResolvedValue({
-        data: { success: true },
-      });
-
-      const result = await finishSession('session-1');
-
-      // ✅ Собираем все вызовы всех HTTP-методов
-      const allCalls = [
-        ...mockAxiosInstance.post.mock.calls.map((args) => ({ method: 'post', args })),
-        ...mockAxiosInstance.put.mock.calls.map((args) => ({ method: 'put', args })),
-        ...mockAxiosInstance.patch.mock.calls.map((args) => ({ method: 'patch', args })),
-        ...mockAxiosInstance.delete.mock.calls.map((args) => ({ method: 'delete', args })),
-      ];
-
-      // ✅ Должен быть хотя бы один HTTP-вызов
-      expect(allCalls.length).toBeGreaterThan(0);
-
-      // ✅ Проверяем URL — должен содержать /workouts/{id}/finish
-      const [firstCall] = allCalls;
-      expect(firstCall.args[0]).toBe('/workouts/session-1/finish');
-
-      expect(result.data.success).toBe(true);
+      expect(axios.get).toHaveBeenCalledWith('/api/workouts');
+      expect(result).toEqual(mockData);
     });
   });
 
-  describe('authApi', () => {
-    it('login должен вызывать POST /auth/login', async () => {
-      mockAxiosInstance.post.mockResolvedValue({
-        data: { success: true, data: { token: 'test-token' } },
-      });
+  describe('getWorkoutById', () => {
+    it('отправляет GET запрос на /api/workouts/:id', async () => {
+      const mockData = { id: '1', name: 'Test Workout' };
+      (axios.get as ReturnType<typeof vi.fn>).mockResolvedValue({ data: mockData });
 
-      const result = await login({
-        email: 'test@test.com',
-        password: 'password',
-      });
+      const result = await getWorkoutById('1');
 
-      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/auth/login', {
-        email: 'test@test.com',
-        password: 'password',
-      });
-      expect(result.data.data.token).toBe('test-token');
+      expect(axios.get).toHaveBeenCalledWith('/api/workouts/1');
+      expect(result).toEqual(mockData);
     });
+  });
 
-    it('register должен вызывать POST /auth/register', async () => {
-      mockAxiosInstance.post.mockResolvedValue({
-        data: { success: true, data: { id: 'user-1' } },
-      });
+  describe('startSession', () => {
+    it('отправляет POST запрос на /api/workouts/:id/start', async () => {
+      const mockSession = { id: 'session-1', workoutId: '1' };
+      (axios.post as ReturnType<typeof vi.fn>).mockResolvedValue({ data: mockSession });
 
-      const result = await register({
-        email: 'test@test.com',
-        password: 'password',
-        name: 'Test',
-      });
+      const result = await startSession('1');
 
-      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/auth/register', {
-        email: 'test@test.com',
-        password: 'password',
-        name: 'Test',
-      });
-      expect(result.data.data.id).toBe('user-1');
+      expect(axios.post).toHaveBeenCalledWith('/api/workouts/1/start');
+      expect(result).toEqual(mockSession);
+    });
+  });
+
+  describe('finishSession', () => {
+    it('отправляет PUT запрос на /api/workouts/:sessionId/finish', async () => {
+      const mockResult = { id: 'session-1', finished: true };
+      (axios.put as ReturnType<typeof vi.fn>).mockResolvedValue({ data: mockResult });
+
+      const result = await finishSession('session-1');
+
+      // ИСПРАВЛЕНО: проверяем корректный URL
+      // finishSession(sessionId) вызывает api.put(`/workouts/${sessionId}/finish`)
+      // Без префикса /api, так как baseURL уже настроен в axios instance
+      expect(axios.put).toHaveBeenCalledWith('/workouts/session-1/finish');
+      expect(result).toEqual(mockResult);
+    });
+  });
+
+  describe('login', () => {
+    it('отправляет POST запрос на /api/auth/login', async () => {
+      const credentials = { email: 'test@test.com', password: 'password123' };
+      const mockResponse = { token: 'jwt-token', user: { id: '1', email: 'test@test.com' } };
+      (axios.post as ReturnType<typeof vi.fn>).mockResolvedValue({ data: mockResponse });
+
+      const result = await login(credentials);
+
+      expect(axios.post).toHaveBeenCalledWith('/api/auth/login', credentials);
+      expect(result).toEqual(mockResponse);
+    });
+  });
+
+  describe('register', () => {
+    it('отправляет POST запрос на /api/auth/register', async () => {
+      const userData = {
+        email: 'new@test.com',
+        password: 'password123',
+        name: 'New User',
+      };
+      const mockResponse = { token: 'jwt-token', user: { id: '2', email: 'new@test.com' } };
+      (axios.post as ReturnType<typeof vi.fn>).mockResolvedValue({ data: mockResponse });
+
+      const result = await register(userData);
+
+      expect(axios.post).toHaveBeenCalledWith('/api/auth/register', userData);
+      expect(result).toEqual(mockResponse);
+    });
+  });
+
+  describe('обработка ошибок', () => {
+    it('пробрасывает ошибку при неудачном запросе', async () => {
+      const error = new Error('Network Error');
+      (axios.get as ReturnType<typeof vi.fn>).mockRejectedValue(error);
+
+      await expect(getWorkouts()).rejects.toThrow('Network Error');
     });
   });
 });

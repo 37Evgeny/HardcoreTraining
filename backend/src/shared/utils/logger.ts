@@ -10,6 +10,8 @@
  * 
  * @module logger
  */
+
+// ИСПРАВЛЕНО: env.ts находится в той же директории (shared/utils/)
 import { env } from './env';
 
 /**
@@ -29,8 +31,9 @@ const LOG_LEVELS: Record<LogLevel, number> = {
 
 /**
  * Текущий уровень логирования из env (по умолчанию 'info').
+ * ИСПРАВЛЕНО: убран костыль `as any`, используется прямое обращение к env
  */
-const currentLevel: LogLevel = (env as any).LOG_LEVEL || 'info';
+const currentLevel: LogLevel = (env.LOG_LEVEL as LogLevel) || 'info';
 
 /**
  * Проверка, нужно ли логировать на данном уровне.

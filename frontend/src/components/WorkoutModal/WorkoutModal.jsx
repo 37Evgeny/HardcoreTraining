@@ -1,4 +1,4 @@
-import ExerciseCard from '../ExerciseCard';
+import ExerciseCard from '../ExerciseCard/ExerciseCard';
 import './WorkoutModal.css';
 
 const WorkoutModal = ({ workout, icon, levelLabel, onClose, onStart }) => {

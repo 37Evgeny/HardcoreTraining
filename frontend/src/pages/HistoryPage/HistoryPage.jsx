@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getHistory } from '../services/api';
+import { getHistory } from '../../services/api';
 
 const HistoryPage = () => {
   const [sessions, setSessions] = useState([]);

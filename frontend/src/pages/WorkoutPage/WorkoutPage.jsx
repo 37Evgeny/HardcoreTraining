@@ -1,321 +1,190 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { sessionsApi } from '../../api/sessions';
-import { workoutsApi } from '../../api/workouts';
-import SafetyModal from '../../components/SafetyModal/SafetyModal';
+import { useAuth } from '../../context/AuthContext';
+// ИСПРАВЛЕНО: импортируем из существующего services/api
+import ErrorMessage from '../../components/ErrorMessage/ErrorMessage';
+import ExerciseCard from '../../components/ExerciseCard/ExerciseCard';
+import Loader from '../../components/Loader/Loader';
 import Timer from '../../components/Timer/Timer';
+import {
+  finishSession,
+  getWorkoutById,
+  startSession,
+} from '../../services/api';
 import './WorkoutPage.css';
 
 /**
- * Страница выполнения тренировки.
- * Показывает список упражнений, таймер, прогресс выполнения.
- * Поддерживает авто-режим (автоматический переход к следующему упражнению).
+ * WorkoutPage — страница детального просмотра и выполнения тренировки.
+ * @returns {JSX.Element}
  */
-function WorkoutPage() {
+const WorkoutPage = () => {
   const { id } = useParams();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Состояния
   const [workout, setWorkout] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [sessionId, setSessionId] = useState(null);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
-  const [completedExercises, setCompletedExercises] = useState([]);
-  const [isFinished, setIsFinished] = useState(false);
-  const [showSafetyModal, setShowSafetyModal] = useState(true);
-  const [isResting, setIsResting] = useState(false);
-  const [autoMode, setAutoMode] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [sessionFinished, setSessionFinished] = useState(false);
 
   /**
-   * Загрузка данных тренировки при монтировании.
+   * Загружает данные тренировки по ID из URL.
    */
   useEffect(() => {
-    let cancelled = false;
-
     const fetchWorkout = async () => {
       try {
         setLoading(true);
         setError(null);
-        const data = await workoutsApi.getById(id);
-        if (!cancelled) {
-          setWorkout(data);
+
+        const data = await getWorkoutById(id);
+        if (!data) {
+          throw new Error('Тренировка не найдена');
         }
+        setWorkout(data);
       } catch (err) {
-        if (!cancelled) {
-          setError(err.response?.data?.message || err.message || 'Не удалось загрузить тренировку');
-        }
+        console.error('Ошибка загрузки тренировки:', err);
+        setError(
+          err.response?.data?.message ||
+            'Не удалось загрузить тренировку. Попробуйте позже.'
+        );
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     };
 
     fetchWorkout();
-    return () => { cancelled = true; };
   }, [id]);
 
   /**
-   * Старт сессии тренировки.
+   * Начинает новую сессию тренировки.
    */
-  const startSession = useCallback(async () => {
-    try {
-      const session = await sessionsApi.start(workout.id);
-      setSessionId(session.id);
-    } catch (err) {
-      console.error('Ошибка старта сессии:', err);
+  const handleStartSession = useCallback(async () => {
+    if (!user) {
+      navigate('/login');
+      return;
     }
-  }, [workout]);
+
+    try {
+      const session = await startSession(id);
+      setSessionId(session.id);
+      setCurrentExerciseIndex(0);
+    } catch (err) {
+      console.error('Ошибка начала сессии:', err);
+      setError('Не удалось начать тренировку.');
+    }
+  }, [id, user, navigate]);
 
   /**
-   * Завершение сессии тренировки.
+   * Завершает текущую сессию тренировки.
    */
-  const finishSession = useCallback(async () => {
+  const handleFinishSession = useCallback(async () => {
     if (!sessionId) return;
+
     try {
-      await sessionsApi.finish(sessionId, {
-        completedExercises: completedExercises.length,
-        totalExercises: workout.exercises.length,
-      });
+      await finishSession(sessionId);
+      setSessionFinished(true);
+      setSessionId(null);
     } catch (err) {
       console.error('Ошибка завершения сессии:', err);
+      setError('Не удалось завершить тренировку.');
     }
-  }, [sessionId, completedExercises, workout]);
+  }, [sessionId]);
 
   /**
-   * Завершение текущего упражнения.
-   * Добавляет его в список выполненных и переходит к следующему.
+   * Переход к следующему упражнению.
    */
-  const completeExercise = useCallback(() => {
-    setCompletedExercises(prev => {
-      if (prev.includes(currentExerciseIndex)) return prev;
-      return [...prev, currentExerciseIndex];
-    });
+  const handleNextExercise = useCallback(() => {
+    if (!workout) return;
 
-    if (currentExerciseIndex < (workout?.exercises?.length || 0) - 1) {
-      if (autoMode) {
-        // В авто-режиме показываем отдых
-        setIsResting(true);
-      } else {
-        // В ручном режиме просто переходим к следующему
-        setCurrentExerciseIndex(prev => prev + 1);
-      }
+    if (currentExerciseIndex < workout.exercises.length - 1) {
+      setCurrentExerciseIndex((prev) => prev + 1);
     } else {
-      // Тренировка завершена
-      setIsFinished(true);
-      finishSession();
+      // Все упражнения выполнены
+      handleFinishSession();
     }
-  }, [currentExerciseIndex, workout, autoMode, finishSession]);
-
-  /**
-   * Завершение фазы отдыха.
-   */
-  const completeRest = useCallback(() => {
-    setIsResting(false);
-    setCurrentExerciseIndex(prev => prev + 1);
-  }, []);
-
-  /**
-   * Пропуск упражнения.
-   */
-  const skipExercise = useCallback(() => {
-    if (currentExerciseIndex < (workout?.exercises?.length || 0) - 1) {
-      setCurrentExerciseIndex(prev => prev + 1);
-    }
-  }, [currentExerciseIndex, workout]);
-
-  /**
-   * Обработчик подтверждения SafetyModal.
-   */
-  const handleSafetyConfirm = useCallback(() => {
-    setShowSafetyModal(false);
-    startSession();
-  }, [startSession]);
-
-  /**
-   * Прогресс выполнения в процентах.
-   */
-  const progressPercent = useMemo(() => {
-    if (!workout?.exercises?.length) return 0;
-    return (completedExercises.length / workout.exercises.length) * 100;
-  }, [completedExercises, workout]);
-
-  /**
-   * Текущее упражнение.
-   */
-  const currentExercise = useMemo(() => {
-    if (!workout?.exercises?.length) return null;
-    return workout.exercises[currentExerciseIndex];
-  }, [workout, currentExerciseIndex]);
+  }, [workout, currentExerciseIndex, handleFinishSession]);
 
   // Состояние загрузки
   if (loading) {
-    return (
-      <div className="workout-page">
-        <div className="workout-loading">
-          <div className="spinner" />
-          <p>Загрузка тренировки...</p>
-        </div>
-      </div>
-    );
+    return <Loader />;
   }
 
   // Состояние ошибки
   if (error) {
-    return (
-      <div className="workout-page">
-        <div className="workout-error">
-          <h2>Ошибка</h2>
-          <p>{error}</p>
-          <button className="btn btn-primary" onClick={() => navigate('/')}>
-            ← Назад к тренировкам
-          </button>
-        </div>
-      </div>
-    );
+    return <ErrorMessage message={error} onRetry={() => window.location.reload()} />;
   }
 
   // Тренировка не найдена
   if (!workout) {
+    return <ErrorMessage message="Тренировка не найдена" />;
+  }
+
+  // Сессия завершена
+  if (sessionFinished) {
     return (
-      <div className="workout-page">
-        <div className="workout-error">
-          <h2>Тренировка не найдена</h2>
-          <button className="btn btn-primary" onClick={() => navigate('/')}>
-            ← Назад к тренировкам
-          </button>
-        </div>
+      <div className="workout-page__finished">
+        <h2>🎉 Тренировка завершена!</h2>
+        <p>Отличная работа! Вы выполнили все упражнения.</p>
+        <button onClick={() => navigate('/')} className="btn btn--primary">
+          Вернуться к списку
+        </button>
       </div>
     );
   }
 
-  // Экран завершения тренировки
-  if (isFinished) {
-    return (
-      <div className="workout-page">
-        <div className="workout-finished animate-bounce-in">
-          <div className="workout-finished-icon">🎉</div>
-          <h2>Тренировка завершена!</h2>
-          <p>
-            Выполнено упражнений: {completedExercises.length} / {workout.exercises.length}
-          </p>
-          <button className="btn btn-primary btn-lg" onClick={() => navigate('/')}>
-            ← К тренировкам
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Safety-модалка (показ перед началом)
-  if (showSafetyModal) {
-    return (
-      <div className="workout-page">
-        <SafetyModal onConfirm={handleSafetyConfirm} />
-      </div>
-    );
-  }
+  const currentExercise = workout.exercises[currentExerciseIndex];
 
   return (
     <div className="workout-page">
-      <div className="workout-container">
-        {/* Заголовок тренировки */}
-        <div className="workout-header animate-fade-in-up">
-          <button className="btn btn-secondary btn-sm" onClick={() => navigate('/')}>
-            ← Назад
-          </button>
-          <div className="workout-header-info">
-            <h1>{workout.name}</h1>
-            <span className="workout-level">{workout.level}</span>
-          </div>
-        </div>
+      <h1 className="workout-page__title">{workout.name}</h1>
+      <p className="workout-page__description">{workout.description}</p>
 
-        {/* Прогресс-бар */}
-        <div className="workout-progress animate-fade-in-up">
-          <div className="progress-header">
-            <span>Прогресс</span>
-            <span>{completedExercises.length} / {workout.exercises.length}</span>
-          </div>
-          <div className="progress-bar">
-            <div
-              className="progress-fill"
-              style={{ width: `${progressPercent}%` }}
+      {!sessionId ? (
+        <button
+          onClick={handleStartSession}
+          className="btn btn--primary workout-page__start-btn"
+        >
+          Начать тренировку
+        </button>
+      ) : (
+        <div className="workout-page__session">
+          <Timer
+            duration={workout.duration || 60}
+            showSettings={false}
+            onComplete={handleNextExercise}
+          />
+
+          {currentExercise && (
+            <ExerciseCard
+              key={currentExercise.id}
+              exercise={currentExercise}
+              exerciseNumber={currentExerciseIndex + 1}
+              totalExercises={workout.exercises.length}
             />
-            {/* Точки-индикаторы упражнений */}
-            {workout.exercises.map((_, index) => (
-              <div
-                key={index}
-                className={`progress-dot ${
-                  completedExercises.includes(index) ? 'completed' : ''
-                } ${index === currentExerciseIndex ? 'current' : ''}`}
-                style={{ left: `${(index / (workout.exercises.length - 1)) * 100}%` }}
-              />
-            ))}
+          )}
+
+          <div className="workout-page__actions">
+            <button
+              onClick={handleNextExercise}
+              className="btn btn--primary"
+            >
+              {currentExerciseIndex < workout.exercises.length - 1
+                ? 'Следующее упражнение'
+                : 'Завершить тренировку'}
+            </button>
+            <button
+              onClick={handleFinishSession}
+              className="btn btn--secondary"
+            >
+              Завершить досрочно
+            </button>
           </div>
         </div>
-
-        {/* Фаза отдыха */}
-        {isResting ? (
-          <div className="workout-rest animate-fade-in-up">
-            <div className="rest-icon animate-bounce-in">😮‍💨</div>
-            <h2>Отдых</h2>
-            <p>Передохни перед следующим упражнением</p>
-            <Timer duration={30} onComplete={completeRest} />
-          </div>
-        ) : (
-          <>
-            {/* Текущее упражнение */}
-            {currentExercise && (
-              <div className="workout-exercise animate-fade-in-up" key={currentExerciseIndex}>
-                <div className="exercise-header">
-                  <span className="exercise-number">
-                    Упражнение {currentExerciseIndex + 1} из {workout.exercises.length}
-                  </span>
-                </div>
-                <h2 className="exercise-name">{currentExercise.name}</h2>
-                {currentExercise.description && (
-                  <p className="exercise-description">{currentExercise.description}</p>
-                )}
-                {currentExercise.reps && (
-                  <p className="exercise-reps">Повторения: {currentExercise.reps}</p>
-                )}
-                {currentExercise.weight && (
-                  <p className="exercise-weight">Вес: {currentExercise.weight} кг</p>
-                )}
-
-                {/* Таймер для упражнения */}
-                <Timer
-                  duration={currentExercise.duration || 60}
-                  onComplete={completeExercise}
-                  showSettings={true}
-                />
-
-                {/* Кнопки управления */}
-                <div className="exercise-actions">
-                  <button className="btn btn-secondary" onClick={skipExercise} type="button">
-                    ⏭ Пропустить
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Переключатель авто-режима */}
-        <div className="workout-auto-toggle animate-fade-in-up">
-          <label className="toggle-label">
-            <input
-              type="checkbox"
-              checked={autoMode}
-              onChange={(e) => setAutoMode(e.target.checked)}
-            />
-            <span className="toggle-text">Авто-режим (автоматический переход)</span>
-          </label>
-        </div>
-      </div>
+      )}
     </div>
   );
-}
+};
 
 export default WorkoutPage;

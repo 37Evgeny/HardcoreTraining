@@ -1,112 +1,122 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+// ИСПРАВЛЕНО: путь '../../context/AuthContext' (поднимаемся из pages/ProfilePage/ -> src/)
+import Loader from '../../components/Loader/Loader';
+import { useAuth } from '../../context/AuthContext';
+import './ProfilePage.css';
 
 /**
- * Страница профиля пользователя.
- * Отображает информацию о пользователе и позволяет выйти из аккаунта.
+ * ProfilePage — страница профиля пользователя.
+ * Отображает информацию о пользователе и историю тренировок.
+ * @returns {JSX.Element}
  */
 const ProfilePage = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [showConfirm, setShowConfirm] = useState(false);
 
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  /**
+   * Загружает историю тренировок пользователя.
+   */
+  useEffect(() => {
+    // Если пользователь не авторизован — перенаправляем на логин
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    const fetchHistory = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Используем API для получения истории
+        const response = await fetch('/api/workouts/history', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Не удалось загрузить историю тренировок');
+        }
+
+        const data = await response.json();
+        setHistory(data);
+      } catch (err) {
+        console.error('Ошибка загрузки истории:', err);
+        setError('Не удалось загрузить историю тренировок.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHistory();
+  }, [user, navigate]);
+
+  /**
+   * Обработчик выхода из аккаунта.
+   */
   const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate('/login');
   };
 
+  // Если пользователь не загружен — показываем лоадер
   if (!user) {
-    return (
-      <div className="container loading-container">
-        <p>Загрузка профиля...</p>
-      </div>
-    );
+    return <Loader />;
   }
 
   return (
-    <div className="container" style={{ maxWidth: '500px', marginTop: '60px' }}>
-      <div className="card" style={{ padding: '40px', textAlign: 'center' }}>
-        <div style={{
-          width: '80px',
-          height: '80px',
-          borderRadius: '50%',
-          background: 'var(--accent-red-bg)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '2.5rem',
-          margin: '0 auto 20px',
-        }}>
-          👤
-        </div>
+    <div className="profile-page">
+      <h1 className="profile-page__title">Профиль</h1>
 
-        <h2 style={{ marginBottom: '8px' }}>{user.name || 'Пользователь'}</h2>
-        <p style={{ color: 'var(--text-tertiary)', marginBottom: '24px' }}>{user.email}</p>
+      <div className="profile-page__info">
+        <h2>{user.name || 'Пользователь'}</h2>
+        <p>Email: {user.email}</p>
+        <p>Зарегистрирован: {new Date(user.createdAt).toLocaleDateString()}</p>
+      </div>
 
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '12px',
-          textAlign: 'left',
-          marginBottom: '30px',
-        }}>
-          <div style={{
-            padding: '12px 16px',
-            background: 'var(--bg-input)',
-            borderRadius: 'var(--radius-sm)',
-            display: 'flex',
-            justifyContent: 'space-between',
-          }}>
-            <span style={{ color: 'var(--text-tertiary)' }}>Роль</span>
-            <span style={{ fontWeight: 600 }}>
-              {user.role === 'ADMIN' ? 'Администратор' : 'Пользователь'}
-            </span>
-          </div>
-          <div style={{
-            padding: '12px 16px',
-            background: 'var(--bg-input)',
-            borderRadius: 'var(--radius-sm)',
-            display: 'flex',
-            justifyContent: 'space-between',
-          }}>
-            <span style={{ color: 'var(--text-tertiary)' }}>Дата регистрации</span>
-            <span style={{ fontWeight: 600 }}>
-              {user.createdAt
-                ? new Date(user.createdAt).toLocaleDateString('ru-RU')
-                : '—'
-              }
-            </span>
-          </div>
-        </div>
+      <div className="profile-page__history">
+        <h2>История тренировок</h2>
 
-        {!showConfirm ? (
-          <button
-            className="btn btn-secondary"
-            onClick={() => setShowConfirm(true)}
-            style={{ width: '100%', color: 'var(--accent-red)' }}
-          >
-            🚪 Выйти из аккаунта
-          </button>
+        {loading ? (
+          <Loader />
+        ) : error ? (
+          <p className="profile-page__error">{error}</p>
+        ) : history.length === 0 ? (
+          <p className="profile-page__empty">
+            У вас пока нет завершённых тренировок.
+          </p>
         ) : (
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button
-              className="btn btn-secondary"
-              onClick={() => setShowConfirm(false)}
-              style={{ flex: 1 }}
-            >
-              Отмена
-            </button>
-            <button
-              className="btn btn-primary"
-              onClick={handleLogout}
-              style={{ flex: 1, background: 'var(--accent-red)' }}
-            >
-              ✅ Выйти
-            </button>
-          </div>
+          <ul className="profile-page__history-list">
+            {history.map((session) => (
+              <li key={session.id} className="profile-page__history-item">
+                <span>{session.workout?.name || 'Тренировка'}</span>
+                <span>
+                  {new Date(session.createdAt).toLocaleDateString()}
+                </span>
+                <span>
+                  Длительность:{' '}
+                  {session.duration
+                    ? `${Math.round(session.duration / 60)} мин`
+                    : '—'}
+                </span>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
+
+      <button
+        onClick={handleLogout}
+        className="btn btn--danger profile-page__logout"
+      >
+        Выйти из аккаунта
+      </button>
     </div>
   );
 };
