@@ -4,19 +4,35 @@ import './WorkoutCard.css';
 /**
  * WorkoutCard — карточка тренировки.
  *
- * @param {Object}   workout - объект тренировки
- * @param {string}   icon    - эмодзи-иконка
- * @param {Function} onClick - обработчик клика
+ * @param {Object}   workout          - объект тренировки
+ * @param {string}   icon             - эмодзи-иконка (опционально, приоритетнее workout.icon)
+ * @param {boolean}  isFavorite       - находится ли тренировка в избранном
+ * @param {Function} onToggleFavorite - переключение избранного
+ * @param {Function} onClick          - обработчик клика по карточке
  */
-const WorkoutCard = ({ workout, icon, onClick }) => {
-  // Defensive: защита от undefined полей
+const WorkoutCard = ({
+  workout,
+  icon,
+  isFavorite = false,
+  onToggleFavorite,
+  onClick,
+}) => {
+  // Defensive: защита от undefined полей и поддержка обоих форматов данных
+  // (бэкенд отдаёт title/durationMinutes, тесты используют name/duration)
   const {
-    title = 'Без названия',
+    title,
+    name,
     description = '',
     level = 'BEGINNER',
-    durationMinutes = 0,
+    durationMinutes,
+    duration,
     exercises = [],
+    icon: workoutIcon,
   } = workout || {};
+
+  const displayTitle = title || name || 'Без названия';
+  const displayIcon = icon || workoutIcon || '🏋️';
+  const displayDuration = durationMinutes ?? duration ?? 0;
 
   // Обрезка описания до 80 символов
   const shortDescription =
@@ -28,14 +44,33 @@ const WorkoutCard = ({ workout, icon, onClick }) => {
       onClick={onClick}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick?.(); }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') onClick?.();
+      }}
     >
       <div className="card-accent" style={{ background: getLevelColor(level) }} />
+
+      {onToggleFavorite && (
+        <button
+          type="button"
+          className="card-favorite-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite();
+          }}
+          aria-label={isFavorite ? 'Убрать из избранного' : 'Добавить в избранное'}
+          aria-pressed={isFavorite}
+        >
+          {isFavorite ? '❤️' : '🤍'}
+        </button>
+      )}
+
       <div className="card-icon-wrapper">
-        <span className="card-icon">{icon}</span>
+        <span className="card-icon">{displayIcon}</span>
       </div>
+
       <div className="card-body">
-        <h3 className="card-title">{title}</h3>
+        <h3 className="card-title">{displayTitle}</h3>
         <p className="card-description">{shortDescription}</p>
         <div className="card-tags">
           <span
@@ -44,7 +79,7 @@ const WorkoutCard = ({ workout, icon, onClick }) => {
           >
             {getLevelLabel(level)}
           </span>
-          <span className="card-tag">⏱ {durationMinutes} мин</span>
+          <span className="card-tag">⏱ {displayDuration} мин</span>
           <span className="card-tag">🏋️ {exercises.length} упр.</span>
         </div>
       </div>

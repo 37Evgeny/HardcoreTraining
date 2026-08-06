@@ -114,6 +114,17 @@
   background: var(--color-bg-hover);
 }
 
+/* Активная ссылка */
+.navbar__link--active {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.navbar__link--active:hover {
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
 /* Кнопка "Выйти" выглядит как ссылка */
 .navbar__link--btn {
   background: none;
