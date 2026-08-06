@@ -1,5 +1,6 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 import 'dotenv/config';
 import { Pool } from 'pg';
 
@@ -453,6 +454,26 @@ async function main() {
 
     console.log(`  ✅ ${workout.title} (${workout.level}) — ${exercises.length} упражнений`);
   }
+
+  // Создаём администратора (идемпотентно — upsert, повторный запуск не создаст дубль)
+  console.log('\n👤 Создаём администратора...');
+  const adminEmail = 'admin@example.com';
+  const adminPassword = 'Admin123!';
+  const adminPasswordHash = await bcrypt.hash(adminPassword, 12);
+
+  const admin = await prisma.user.upsert({
+    where: { email: adminEmail },
+    update: { role: 'ADMIN' },
+    create: {
+      email: adminEmail,
+      password: adminPasswordHash,
+      name: 'Администратор',
+      role: 'ADMIN',
+    },
+  });
+
+  console.log(`  ✅ Администратор: ${admin.email} | роль: ${admin.role}`);
+  console.log(`  🔑 Пароль: ${adminPassword}`);
 
   console.log('\n🎉 База данных успешно заполнена!');
   console.log(`📊 Итого: ${workouts.length} тренировок`);

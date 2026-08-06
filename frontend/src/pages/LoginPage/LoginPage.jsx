@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import './LoginPage.css';
 
 /**
  * LoginPage — страница входа.
- * Логика корректна: login() из AuthContext возвращает данные,
- * api.js уже разворачивает ответ.
+ * Структура и стили приведены в соответствие с RegisterPage.
  */
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -31,51 +31,46 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="container login-page">
-      <div className="card login-page__card">
-        <h2 className="login-page__title">🔐 Вход</h2>
-        <p className="login-page__subtitle">Войдите в свой аккаунт</p>
+    <div className="login-page">
+      <h1 className="login-page__title">🔐 Вход</h1>
 
-        {error && (
-          <div className="login-page__error" role="alert">{error}</div>
-        )}
+      <form onSubmit={handleSubmit} className="login-page__form" noValidate>
+        {error && <div className="login-page__error" role="alert">{error}</div>}
 
-        <form onSubmit={handleSubmit} className="login-page__form" noValidate>
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-              placeholder="your@email.com"
-            />
-          </div>
+        <div className="form-group">
+          <label htmlFor="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoComplete="email"
+            placeholder="your@email.com"
+          />
+        </div>
 
-          <div className="form-group">
-            <label htmlFor="password">Пароль</label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-              placeholder="••••••••"
-            />
-          </div>
+        <div className="form-group">
+          <label htmlFor="password">Пароль</label>
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            autoComplete="current-password"
+            placeholder="••••••••"
+          />
+        </div>
 
-          <button type="submit" className="btn btn-primary login-page__submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Вход...' : '🚀 Войти'}
-          </button>
-        </form>
+        <button type="submit" className="btn btn--primary login-page__submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Вход...' : '🚀 Войти'}
+        </button>
 
         <p className="login-page__register-link">
           Нет аккаунта? <Link to="/register">Зарегистрироваться</Link>
         </p>
-      </div>
+      </form>
     </div>
   );
 };

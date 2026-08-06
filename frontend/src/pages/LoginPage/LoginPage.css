@@ -1,30 +1,37 @@
 /* ============================================================
-   Стили страницы входа (LoginPage)
+   LoginPage — страница входа
+   Структура и стили приведены в соответствие с RegisterPage
    ============================================================ */
 
 .login-page {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: calc(100vh - var(--navbar-height));
-  padding: 2rem 1rem;
-}
-
-.login-page__card {
-  width: 100%;
   max-width: 420px;
-  padding: 2rem;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: calc(100vh - var(--navbar-height) - 2rem);
+  justify-content: center;
 }
 
 .login-page__title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 0.5rem;
   text-align: center;
-  margin-bottom: 0.25rem;
 }
 
-.login-page__subtitle {
-  text-align: center;
-  color: var(--color-text-secondary);
-  margin-bottom: 1.5rem;
+.login-page__form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background: var(--color-bg-secondary);
+  padding: 2rem;
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-md);
 }
 
 .login-page__error {
@@ -35,24 +42,6 @@
   color: #e74c3c;
   font-size: 0.9rem;
   text-align: center;
-  margin-bottom: 1rem;
-}
-
-.login-page__form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.login-page__submit {
-  width: 100%;
-}
-
-.login-page__register-link {
-  text-align: center;
-  font-size: 0.9rem;
-  color: var(--color-text-secondary);
-  margin-top: 1rem;
 }
 
 .form-group {
@@ -65,4 +54,57 @@
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--color-text-secondary);
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  color: var(--color-text);
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  box-sizing: border-box;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+}
+
+.form-group input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.login-page__submit {
+  margin-top: 0.5rem;
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.login-page__submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.login-page__register-link {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  margin-top: 0.5rem;
+}
+
+.login-page__register-link a {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.login-page__register-link a:hover {
+  text-decoration: underline;
 }
