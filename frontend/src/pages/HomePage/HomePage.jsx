@@ -4,11 +4,15 @@ import ErrorMessage from '../../components/ErrorMessage/ErrorMessage';
 import Loader from '../../components/Loader/Loader';
 import WorkoutCard from '../../components/WorkoutCard/WorkoutCard';
 import { useAuth } from '../../context/AuthContext';
-import { addFavorite, getFavorites, getWorkouts, removeFavorite } from '../../services/api';
+import { addFavorite, getFavorites, getWorkoutsPage, removeFavorite } from '../../services/api';
 import './HomePage.css';
+
+/** Размер страницы — совпадает с дефолтным limit на бэкенде. */
+const PAGE_SIZE = 20;
 
 /**
  * HomePage — главная страница со списком тренировок и избранным.
+ * Реализована пагинация «Показать ещё»: подгружаем страницы по 20 тренировок.
  */
 const HomePage = () => {
   const { user } = useAuth();
@@ -16,12 +20,14 @@ const HomePage = () => {
 
   const [workouts, setWorkouts] = useState([]);
   const [favorites, setFavorites] = useState([]); // массив ID избранных тренировок
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
 
   /**
-   * Загрузка тренировок и избранного.
-   * ИСПРАВЛЕНО: api.js теперь возвращает данные напрямую (res.data.data).
+   * Загрузка первой страницы тренировок и избранного.
    */
   useEffect(() => {
     const fetchData = async () => {
@@ -30,12 +36,14 @@ const HomePage = () => {
         setError(null);
 
         const [workoutsData, favoritesData] = await Promise.all([
-          getWorkouts(),
+          getWorkoutsPage({ page: 1, limit: PAGE_SIZE }),
           user ? getFavorites() : Promise.resolve([]),
         ]);
 
-        setWorkouts(workoutsData);
-        // ИСПРАВЛЕНО: храним только ID избранных тренировок (единый формат)
+        setWorkouts(workoutsData.data);
+        setPage(1);
+        setTotalPages(workoutsData.meta?.totalPages ?? 1);
+        // Храним только ID избранных тренировок (единый формат)
         setFavorites(favoritesData.map((fav) => fav.id));
       } catch (err) {
         console.error('Ошибка загрузки данных HomePage:', err);
@@ -48,6 +56,31 @@ const HomePage = () => {
     fetchData();
   }, [user]);
 
+  /**
+   * Подгрузка следующей страницы тренировок (кнопка «Показать ещё»).
+   */
+  const handleLoadMore = useCallback(async () => {
+    if (loadingMore || page >= totalPages) return;
+
+    const nextPage = page + 1;
+    try {
+      setLoadingMore(true);
+      setError(null);
+
+      const workoutsData = await getWorkoutsPage({ page: nextPage, limit: PAGE_SIZE });
+
+      // Дописываем новые тренировки к уже загруженным
+      setWorkouts((prev) => [...prev, ...workoutsData.data]);
+      setPage(nextPage);
+      setTotalPages(workoutsData.meta?.totalPages ?? totalPages);
+    } catch (err) {
+      console.error('Ошибка подгрузки тренировок:', err);
+      setError(err.response?.data?.message || 'Не удалось загрузить ещё тренировки.');
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [page, totalPages, loadingMore]);
+
   const isFavorite = useCallback(
     (workoutId) => favorites.includes(workoutId),
     [favorites]
@@ -55,7 +88,6 @@ const HomePage = () => {
 
   /**
    * Переключение избранного.
-   * ИСПРАВЛЕНО: removeFavorite/addFavorite принимают workoutId (не fav.id).
    */
   const handleToggleFavorite = useCallback(
     async (workoutId) => {
@@ -79,7 +111,6 @@ const HomePage = () => {
 
   /**
    * Переход к тренировке.
-   * ИСПРАВЛЕНО: маршрут /workout/:id (совпадает с App.jsx).
    */
   const handleWorkoutClick = useCallback(
     (workoutId) => navigate(`/workout/${workoutId}`),
@@ -96,17 +127,30 @@ const HomePage = () => {
       {workouts.length === 0 ? (
         <p className="home-page__empty">Пока нет доступных тренировок.</p>
       ) : (
-        <div className="home-page__grid">
-          {workouts.map((workout) => (
-            <WorkoutCard
-              key={workout.id}
-              workout={workout}
-              isFavorite={isFavorite(workout.id)}
-              onToggleFavorite={() => handleToggleFavorite(workout.id)}
-              onClick={() => handleWorkoutClick(workout.id)}
-            />
-          ))}
-        </div>
+        <>
+          <div className="home-page__grid">
+            {workouts.map((workout) => (
+              <WorkoutCard
+                key={workout.id}
+                workout={workout}
+                isFavorite={isFavorite(workout.id)}
+                onToggleFavorite={() => handleToggleFavorite(workout.id)}
+                onClick={() => handleWorkoutClick(workout.id)}
+              />
+            ))}
+          </div>
+
+          {page < totalPages && (
+           <button
+  type="button"
+  className="btn btn-primary home-page__load-more"
+  onClick={handleLoadMore}
+  disabled={loadingMore}
+>
+  {loadingMore ? 'Загрузка…' : 'Показать ещё'}
+</button>
+          )}
+        </>
       )}
     </div>
   );

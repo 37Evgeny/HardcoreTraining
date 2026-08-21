@@ -34,7 +34,6 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
-        // Уже обновляем токен — ставим запрос в очередь
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         }).then((token) => {
@@ -87,6 +86,15 @@ export const login = (data) => unwrap(api.post('/auth/login', data));
 
 // ========== Workouts API ==========
 export const getWorkouts = (params) => unwrap(api.get('/workouts', { params }));
+
+/**
+ * Получение страницы тренировок с метаданными пагинации.
+ * В отличие от getWorkouts, возвращает { data, meta } целиком,
+ * чтобы фронтенд знал total / totalPages для кнопки «Показать ещё».
+ */
+export const getWorkoutsPage = (params) =>
+  api.get('/workouts', { params }).then((res) => res.data);
+
 export const getWorkoutById = (id) => unwrap(api.get(`/workouts/${id}`));
 export const startSession = (data) => unwrap(api.post('/workouts/start', data));
 export const finishSession = (sessionId) => unwrap(api.put(`/workouts/${sessionId}/finish`));
