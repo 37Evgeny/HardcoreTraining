@@ -145,6 +145,13 @@ a:hover {
   color: var(--color-primary-hover);
 }
 
+/* Обёртка приложения: flex-колонка на всю высоту, чтобы Footer прижимался к низу */
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
 /* ---------- Контейнер ---------- */
 .container {
   width: 100%;

@@ -1,5 +1,6 @@
 import { Suspense, lazy } from 'react';
 import { Route, BrowserRouter as Router, Routes, useLocation } from 'react-router-dom';
+import Footer from './components/Footer/Footer';
 import Navbar from './components/Navbar/Navbar';
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
@@ -47,10 +48,13 @@ function App() {
     <Router>
       <AuthProvider>
         <ThemeProvider>
-          <Navbar />
-          <main style={{ flex: 1, paddingTop: 'var(--navbar-height)' }}>
-            <AnimatedRoutes />
-          </main>
+          <div className="app">
+            <Navbar />
+            <main style={{ flex: 1, paddingTop: 'var(--navbar-height)' }}>
+              <AnimatedRoutes />
+            </main>
+            <Footer />
+          </div>
         </ThemeProvider>
       </AuthProvider>
     </Router>
