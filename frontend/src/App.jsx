@@ -1,5 +1,6 @@
 import { Suspense, lazy } from 'react';
 import { Route, BrowserRouter as Router, Routes, useLocation } from 'react-router-dom';
+import Footer from './components/Footer/Footer';
 import Navbar from './components/Navbar/Navbar';
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
@@ -12,11 +13,8 @@ const RegisterPage = lazy(() => import('./pages/RegisterPage/RegisterPage'));
 const WorkoutPage = lazy(() => import('./pages/WorkoutPage/WorkoutPage'));
 const HistoryPage = lazy(() => import('./pages/HistoryPage/HistoryPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage/ProfilePage'));
+const FavoritesPage = lazy(() => import('./pages/FavoritesPage/FavoritesPage'));
 
-/**
- * Компонент-обёртка для анимированных переходов между страницами.
- * При смене location добавляет класс анимации к контейнеру.
- */
 function AnimatedRoutes() {
   const location = useLocation();
 
@@ -30,55 +28,33 @@ function AnimatedRoutes() {
         }
       >
         <Routes location={location}>
-          {/* Публичные маршруты */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
 
-          {/* Публичный маршрут — главная с тренировками */}
           <Route path="/" element={<HomePage />} />
-          <Route
-            path="/workout/:id"
-            element={
-              <ProtectedRoute>
-                <WorkoutPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/history"
-            element={
-              <ProtectedRoute>
-                <HistoryPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <ProfilePage />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/workout/:id" element={<ProtectedRoute><WorkoutPage /></ProtectedRoute>} />
+          <Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
+          {/* ===== Маршрут страницы «Избранное» ===== */}
+          <Route path="/favorites" element={<ProtectedRoute><FavoritesPage /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
         </Routes>
       </Suspense>
     </div>
   );
 }
 
-/**
- * Корневой компонент приложения.
- * Оборачивает всё в провайдеры контекста и роутер.
- */
 function App() {
   return (
     <Router>
       <AuthProvider>
         <ThemeProvider>
-          <Navbar />
-          <main style={{ flex: 1, paddingTop: 'var(--navbar-height)' }}>
-            <AnimatedRoutes />
-          </main>
+          <div className="app">
+            <Navbar />
+            <main style={{ flex: 1, paddingTop: 'var(--navbar-height)' }}>
+              <AnimatedRoutes />
+            </main>
+            <Footer />
+          </div>
         </ThemeProvider>
       </AuthProvider>
     </Router>

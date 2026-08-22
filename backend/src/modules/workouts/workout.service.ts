@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../config/prisma';
 import { AppError } from '../../middleware/errorHandler';
 import { GetWorkoutsQuery, StartSessionInput } from './workout.validator';
@@ -68,46 +69,104 @@ export const startSession = async (
 ) => {
   const { workoutId } = input;
 
-  // Проверка существования тренировки
-  const workout = await prisma.workout.findUnique({
-    where: { id: workoutId },
-  });
-
+  const workout = await prisma.workout.findUnique({ where: { id: workoutId } });
   if (!workout) {
     throw new AppError('Workout not found', 404);
   }
 
-  // ====== ДОБАВЛЕНО: Проверка активной сессии ======
+  // Ищем активную (незавершённую) сессию пользователя.
+  // Включаем тренировку с упражнениями и текущий прогресс для восстановления.
   const activeSession = await prisma.workoutSession.findFirst({
-    where: {
-      userId,
-      completed: false,
-    },
+    where: { userId, completed: false },
+    include: { workout: { include: { exercises: true } } },
   });
 
   if (activeSession) {
+    // 409 + данные активной сессии (включая прогресс) для восстановления
     throw new AppError(
       'У вас уже есть активная тренировка. Завершите её перед началом новой.',
-      409
+      409,
+      { activeSession }
     );
   }
-  // =================================================
 
-  // Создание сессии
-  const session = await prisma.workoutSession.create({
-    data: {
-      workoutId,
-      userId,
-      completed: false,
-    },
-    include: {
-      workout: {
-        include: { exercises: true },
-      },
-    },
+  try {
+    const session = await prisma.workoutSession.create({
+      data: { workoutId, userId, completed: false, currentExerciseIndex: 0 },
+      include: { workout: { include: { exercises: true } } },
+    });
+    return session;
+  } catch (error) {
+    // Защита от гонки: уникальный частичный индекс не даст создать вторую
+    // активную сессию, даже если два запроса прошли проверку одновременно.
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      throw new AppError('У вас уже есть активная тренировка.', 409);
+    }
+    throw error;
+  }
+};
+
+/**
+ * Сохранение прогресса тренировки (индекс текущего упражнения).
+ * Вызывается при переходе к следующему упражнению.
+ */
+export const updateSessionProgress = async (
+  sessionId: string,
+  userId: string,
+  currentExerciseIndex: number
+) => {
+  const session = await prisma.workoutSession.findUnique({
+    where: { id: sessionId },
   });
 
-  return session;
+  if (!session) {
+    throw new AppError('Session not found', 404);
+  }
+
+  // Проверка принадлежности пользователю
+  if (session.userId !== userId) {
+    throw new AppError('You can only update your own sessions', 403);
+  }
+
+  // Завершённую сессию обновлять нельзя
+  if (session.completed) {
+    throw new AppError('Session already completed', 400);
+  }
+
+  const updated = await prisma.workoutSession.update({
+    where: { id: sessionId },
+    data: { currentExerciseIndex },
+  });
+
+  return updated;
+};
+
+/**
+ * Отмена (отказ) от активной сессии.
+ */
+export const cancelSession = async (sessionId: string, userId: string) => {
+  const session = await prisma.workoutSession.findUnique({
+    where: { id: sessionId },
+  });
+
+  if (!session) {
+    throw new AppError('Session not found', 404);
+  }
+
+  if (session.userId !== userId) {
+    throw new AppError('You can only cancel your own sessions', 403);
+  }
+
+  if (session.completed) {
+    throw new AppError('Session already completed', 400);
+  }
+
+  await prisma.workoutSession.delete({ where: { id: sessionId } });
+
+  return { cancelled: true };
 };
 
 /**

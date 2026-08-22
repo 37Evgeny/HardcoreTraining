@@ -28,7 +28,7 @@ model User {
   name      String?
   role      String   @default("USER") // USER | ADMIN
   sessions  WorkoutSession[]
-  favorites Favorite[] 
+  favorites Favorite[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -45,7 +45,7 @@ model Workout {
   durationMinutes Int
   exercises       Exercise[]
   sessions        WorkoutSession[]
-  favorites       Favorite[] 
+  favorites       Favorite[]
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
@@ -74,6 +74,8 @@ model WorkoutSession {
   workoutId  String
   workout    Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
   completed  Boolean  @default(false)
+  // Индекс текущего упражнения для восстановления прогресса тренировки
+  currentExerciseIndex Int @default(0)
   finishedAt DateTime?
   createdAt  DateTime @default(now())
 

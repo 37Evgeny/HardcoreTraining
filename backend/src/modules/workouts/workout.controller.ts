@@ -93,3 +93,44 @@ export const getHistory = async (
     next(error);
   }
 };
+
+/**
+ * PUT /api/workouts/:sessionId/progress
+ * Сохранение прогресса тренировки (индекс текущего упражнения).
+ */
+export const updateSessionProgress = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const result = await workoutService.updateSessionProgress(
+      req.params.sessionId,
+      req.user!.userId,
+      req.body.currentExerciseIndex
+    );
+    res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * DELETE /api/workouts/:sessionId
+ * Отмена активной сессии (сброс зависшей тренировки).
+ */
+export const cancelSession = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const result = await workoutService.cancelSession(
+      req.params.sessionId,
+      req.user!.userId
+    );
+    res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};

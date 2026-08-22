@@ -102,3 +102,15 @@ ALTER TABLE "workout_sessions" ADD CONSTRAINT "workout_sessions_userId_fkey" FOR
 
 -- AddForeignKey
 ALTER TABLE "workout_sessions" ADD CONSTRAINT "workout_sessions_workoutId_fkey" FOREIGN KEY ("workoutId") REFERENCES "workouts"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+-- Добавляем индекс текущего упражнения для восстановления прогресса тренировки
+ALTER TABLE "workout_sessions"
+ADD COLUMN "currentExerciseIndex" INTEGER NOT NULL DEFAULT 0;
+
+-- Уникальный частичный индекс: один активный (незавершённый) сеанс на пользователя.
+-- Гарантирует целостность на уровне БД и защищает от гонок (race condition)
+-- при параллельном старте сессий одним пользователем.
+CREATE UNIQUE INDEX "workout_sessions_one_active_per_user"
+ON "workout_sessions"("userId")
+WHERE "completed" = false;

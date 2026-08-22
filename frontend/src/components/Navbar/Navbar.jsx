@@ -58,6 +58,9 @@ const Navbar = () => {
 
           {user ? (
             <>
+            <NavLink to="/favorites" className={linkClass} onClick={closeMenu}>
+      Избранное
+    </NavLink>
               <NavLink to="/profile" className={linkClass} onClick={closeMenu}>
                 Профиль
               </NavLink>

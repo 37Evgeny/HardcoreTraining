@@ -36,5 +36,39 @@ export const finishSessionSchema = z.object({
     .regex(/^[a-zA-Z0-9_-]+$/, 'Недопустимые символы в sessionId'),
 });
 
+/**
+ * Валидация params для PUT /workouts/:sessionId/progress.
+ */
+export const updateProgressParamsSchema = z.object({
+  sessionId: z
+    .string()
+    .min(1, 'sessionId обязателен')
+    .max(100, 'sessionId слишком длинный')
+    .regex(/^[a-zA-Z0-9_-]+$/, 'Недопустимые символы в sessionId'),
+});
+
+/**
+ * Валидация body для PUT /workouts/:sessionId/progress.
+ * Индекс упражнения — неотрицательное целое число.
+ */
+export const updateProgressBodySchema = z.object({
+  currentExerciseIndex: z
+    .number({ invalid_type_error: 'currentExerciseIndex должен быть числом' })
+    .int('currentExerciseIndex должен быть целым числом')
+    .min(0, 'Индекс упражнения не может быть отрицательным')
+    .max(1000, 'Индекс упражнения слишком большой'),
+});
+
+/**
+ * Валидация params для DELETE /workouts/:sessionId.
+ */
+export const cancelSessionSchema = z.object({
+  sessionId: z
+    .string()
+    .min(1, 'sessionId обязателен')
+    .max(100, 'sessionId слишком длинный')
+    .regex(/^[a-zA-Z0-9_-]+$/, 'Недопустимые символы в sessionId'),
+});
+
 export type GetWorkoutsQuery = z.infer<typeof getWorkoutsSchema>;
 export type StartSessionInput = z.infer<typeof startSessionSchema>;

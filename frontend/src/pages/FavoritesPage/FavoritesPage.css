@@ -1,0 +1,52 @@
+/* ============================================================
+   Стили страницы «Избранное» (FavoritesPage)
+   Используем CSS-переменные проекта.
+   ============================================================ */
+
+.favorites-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.favorites-page__title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+/* Сетка карточек — как на главной странице */
+.favorites-page__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Пустое состояние */
+.favorites-page__empty {
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: 1.1rem;
+  padding: 3rem 1rem;
+}
+
+/* ============================================================
+   Адаптивность
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .favorites-page {
+    padding: 1.5rem 1rem;
+  }
+
+  .favorites-page__title {
+    font-size: 1.6rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .favorites-page__grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
