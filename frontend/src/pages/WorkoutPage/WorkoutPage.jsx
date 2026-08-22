@@ -5,12 +5,15 @@ import ExerciseCard from '../../components/ExerciseCard/ExerciseCard';
 import Loader from '../../components/Loader/Loader';
 import Timer from '../../components/Timer/Timer';
 import { useAuth } from '../../context/AuthContext';
-import { finishSession, getWorkoutById, startSession } from '../../services/api';
+import {
+  cancelSession,
+  finishSession,
+  getWorkoutById,
+  startSession,
+  updateSessionProgress,
+} from '../../services/api';
 import './WorkoutPage.css';
 
-/**
- * WorkoutPage — детальный просмотр и выполнение тренировки.
- */
 const WorkoutPage = () => {
   const { id } = useParams();
   const { user } = useAuth();
@@ -22,32 +25,27 @@ const WorkoutPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sessionFinished, setSessionFinished] = useState(false);
+  // Активная сессия из ответа на 409 (для модального окна восстановления)
+  const [activeSessionConflict, setActiveSessionConflict] = useState(null);
 
-  /**
-   * Загрузка тренировки.
-   * ИСПРАВЛЕНО: getWorkoutById возвращает данные напрямую (res.data.data).
-   */
   useEffect(() => {
-    const fetchWorkout = async () => {
+    const loadWorkout = async () => {
       try {
-        setLoading(true);
-        setError(null);
         const data = await getWorkoutById(id);
-        if (!data) throw new Error('Тренировка не найдена');
         setWorkout(data);
       } catch (err) {
         console.error('Ошибка загрузки тренировки:', err);
-        setError(err.response?.data?.message || 'Не удалось загрузить тренировку. Попробуйте позже.');
+        setError('Не удалось загрузить тренировку.');
       } finally {
         setLoading(false);
       }
     };
-    fetchWorkout();
+    loadWorkout();
   }, [id]);
 
   /**
    * Начало сессии.
-   * ИСПРАВЛЕНО: startSession принимает { workoutId } и возвращает данные.
+   * При 409 (уже есть активная сессия) показываем модальное окно восстановления.
    */
   const handleStartSession = useCallback(async () => {
     if (!user) { navigate('/login'); return; }
@@ -56,34 +54,82 @@ const WorkoutPage = () => {
       setSessionId(session.id);
       setCurrentExerciseIndex(0);
     } catch (err) {
+      // 409 — уже есть активная сессия: предлагаем восстановление
+      if (err.response?.status === 409 && err.response?.data?.data?.activeSession) {
+        setActiveSessionConflict(err.response.data.data.activeSession);
+        return;
+      }
       console.error('Ошибка начала сессии:', err);
       setError('Не удалось начать тренировку.');
     }
   }, [id, user, navigate]);
 
   /**
-   * Завершение сессии.
+   * Продолжить существующую активную сессию.
+   * Восстанавливает тренировку и возвращает на сохранённое упражнение.
+   */
+  const handleResumeSession = useCallback(() => {
+    if (!activeSessionConflict) return;
+    setWorkout(activeSessionConflict.workout);
+    setSessionId(activeSessionConflict.id);
+    // Возвращаемся на то упражнение, где остановился пользователь
+    setCurrentExerciseIndex(activeSessionConflict.currentExerciseIndex ?? 0);
+    setActiveSessionConflict(null);
+  }, [activeSessionConflict]);
+
+  /**
+   * Отменить зависшую сессию и начать новую с нуля.
+   */
+  const handleDiscardAndRestart = useCallback(async () => {
+    if (!activeSessionConflict) return;
+    try {
+      await cancelSession(activeSessionConflict.id);
+      setActiveSessionConflict(null);
+      await handleStartSession();
+    } catch (err) {
+      console.error('Ошибка отмены сессии:', err);
+      setError('Не удалось отменить предыдущую тренировку.');
+    }
+  }, [activeSessionConflict, handleStartSession]);
+
+  /**
+   * Завершение сессии (досрочно или после последнего упражнения).
    */
   const handleFinishSession = useCallback(async () => {
     if (!sessionId) return;
     try {
       await finishSession(sessionId);
       setSessionFinished(true);
-      setSessionId(null);
     } catch (err) {
       console.error('Ошибка завершения сессии:', err);
       setError('Не удалось завершить тренировку.');
     }
   }, [sessionId]);
 
-  const handleNextExercise = useCallback(() => {
-    if (!workout) return;
-    if (currentExerciseIndex < workout.exercises.length - 1) {
-      setCurrentExerciseIndex((prev) => prev + 1);
-    } else {
-      handleFinishSession();
+  /**
+   * Переход к следующему упражнению.
+   * Сохраняет прогресс в БД, чтобы «Продолжить» возвращало на то же упражнение.
+   */
+  const handleNextExercise = useCallback(async () => {
+    if (!sessionId) return;
+
+    const nextIndex = currentExerciseIndex + 1;
+
+    // Дошли до конца — завершаем тренировку
+    if (nextIndex >= workout.exercises.length) {
+      await handleFinishSession();
+      return;
     }
-  }, [workout, currentExerciseIndex, handleFinishSession]);
+
+    setCurrentExerciseIndex(nextIndex);
+
+    // Сохраняем прогресс (fire-and-forget с логированием ошибок)
+    try {
+      await updateSessionProgress(sessionId, nextIndex);
+    } catch (err) {
+      console.error('Не удалось сохранить прогресс:', err);
+    }
+  }, [sessionId, currentExerciseIndex, workout, handleFinishSession]);
 
   if (loading) return <Loader />;
   if (error) return <ErrorMessage message={error} onRetry={() => window.location.reload()} />;
@@ -91,11 +137,11 @@ const WorkoutPage = () => {
 
   if (sessionFinished) {
     return (
-      <div className="workout-page__finished">
-        <h2>🎉 Тренировка завершена!</h2>
-        <p>Отличная работа! Вы выполнили все упражнения.</p>
-        <button type="button" onClick={() => navigate('/')} className="btn btn--primary">
-          Вернуться к списку
+      <div className="workout-page">
+        <h1 className="workout-page__title">Тренировка завершена!</h1>
+        <p className="workout-page__description">Отличная работа! Вы прошли «{workout.title}».</p>
+        <button type="button" onClick={() => navigate('/workouts')} className="btn btn--primary">
+          К списку тренировок
         </button>
       </div>
     );
@@ -105,7 +151,6 @@ const WorkoutPage = () => {
 
   return (
     <div className="workout-page">
-      {/* ИСПРАВЛЕНО: бэкенд возвращает title, а не name */}
       <h1 className="workout-page__title">{workout.title}</h1>
       <p className="workout-page__description">{workout.description}</p>
 
@@ -120,7 +165,6 @@ const WorkoutPage = () => {
             showSettings={false}
             onComplete={handleNextExercise}
           />
-
           {currentExercise && (
             <ExerciseCard
               key={currentExercise.id}
@@ -129,7 +173,6 @@ const WorkoutPage = () => {
               totalExercises={workout.exercises.length}
             />
           )}
-
           <div className="workout-page__actions">
             <button type="button" onClick={handleNextExercise} className="btn btn--primary">
               {currentExerciseIndex < workout.exercises.length - 1
@@ -139,6 +182,29 @@ const WorkoutPage = () => {
             <button type="button" onClick={handleFinishSession} className="btn btn--secondary">
               Завершить досрочно
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно: восстановление активной сессии */}
+      {activeSessionConflict && (
+        <div className="workout-page__modal-overlay" role="dialog" aria-modal="true">
+          <div className="workout-page__modal">
+            <h2>Незавершённая тренировка</h2>
+            <p>
+              У вас есть активная тренировка «{activeSessionConflict.workout?.title}».
+              Вы остановились на упражнении{' '}
+              {(activeSessionConflict.currentExerciseIndex ?? 0) + 1} из{' '}
+              {activeSessionConflict.workout?.exercises?.length ?? '?'}.
+            </p>
+            <div className="workout-page__modal-actions">
+              <button type="button" onClick={handleResumeSession} className="btn btn--primary">
+                Продолжить
+              </button>
+              <button type="button" onClick={handleDiscardAndRestart} className="btn btn--secondary">
+                Отменить и начать заново
+              </button>
+            </div>
           </div>
         </div>
       )}

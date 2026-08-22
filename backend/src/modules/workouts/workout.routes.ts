@@ -3,9 +3,12 @@ import { authenticate } from '../../middleware/auth.middleware';
 import { validate } from '../../middleware/validate.middleware';
 import * as workoutController from './workout.controller';
 import {
+  cancelSessionSchema,
   finishSessionSchema,
   getWorkoutsSchema,
   startSessionSchema,
+  updateProgressBodySchema,
+  updateProgressParamsSchema,
 } from './workout.validator';
 
 const router = Router();
@@ -49,6 +52,29 @@ router.put(
   authenticate,
   validate(finishSessionSchema, 'params'),
   workoutController.finishSession
+);
+
+/**
+ * PUT /api/workouts/:sessionId/progress
+ * Защищенный: сохранение прогресса тренировки.
+ */
+router.put(
+  '/:sessionId/progress',
+  authenticate,
+  validate(updateProgressParamsSchema, 'params'),
+  validate(updateProgressBodySchema, 'body'),
+  workoutController.updateSessionProgress
+);
+
+/**
+ * DELETE /api/workouts/:sessionId
+ * Защищенный: отмена активной сессии (сброс зависшей тренировки).
+ */
+router.delete(
+  '/:sessionId',
+  authenticate,
+  validate(cancelSessionSchema, 'params'),
+  workoutController.cancelSession
 );
 
 export default router;

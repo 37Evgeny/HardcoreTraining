@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import ErrorMessage from '../../components/ErrorMessage/ErrorMessage';
+import LevelFilterBar from '../../components/LevelFilterBar/LevelFilterBar';
 import Loader from '../../components/Loader/Loader';
 import WorkoutCard from '../../components/WorkoutCard/WorkoutCard';
 import { useAuth } from '../../context/AuthContext';
@@ -13,10 +14,19 @@ const PAGE_SIZE = 20;
 /**
  * HomePage — главная страница со списком тренировок и избранным.
  * Реализована пагинация «Показать ещё»: подгружаем страницы по 20 тренировок.
+ *
+ * Фильтрация по уровню: уровень берётся из URL-параметра ?level=,
+ * который проставляет LevelFilterBar. При смене уровня список
+ * перезагружается с 1-й страницы.
  */
 const HomePage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Активный уровень из URL (?level=BEGINNER | INTERMEDIATE | ADVANCED).
+  // Если параметра нет — undefined (показываем все тренировки).
+  const level = searchParams.get('level') || undefined;
 
   const [workouts, setWorkouts] = useState([]);
   const [favorites, setFavorites] = useState([]); // массив ID избранных тренировок
@@ -28,6 +38,7 @@ const HomePage = () => {
 
   /**
    * Загрузка первой страницы тренировок и избранного.
+   * Зависит от user и level — при смене фильтра перезагружаем с 1-й страницы.
    */
   useEffect(() => {
     const fetchData = async () => {
@@ -36,7 +47,7 @@ const HomePage = () => {
         setError(null);
 
         const [workoutsData, favoritesData] = await Promise.all([
-          getWorkoutsPage({ page: 1, limit: PAGE_SIZE }),
+          getWorkoutsPage({ page: 1, limit: PAGE_SIZE, level }),
           user ? getFavorites() : Promise.resolve([]),
         ]);
 
@@ -54,10 +65,11 @@ const HomePage = () => {
     };
 
     fetchData();
-  }, [user]);
+  }, [user, level]);
 
   /**
    * Подгрузка следующей страницы тренировок (кнопка «Показать ещё»).
+   * Учитывает текущий фильтр по уровню.
    */
   const handleLoadMore = useCallback(async () => {
     if (loadingMore || page >= totalPages) return;
@@ -67,7 +79,7 @@ const HomePage = () => {
       setLoadingMore(true);
       setError(null);
 
-      const workoutsData = await getWorkoutsPage({ page: nextPage, limit: PAGE_SIZE });
+      const workoutsData = await getWorkoutsPage({ page: nextPage, limit: PAGE_SIZE, level });
 
       // Дописываем новые тренировки к уже загруженным
       setWorkouts((prev) => [...prev, ...workoutsData.data]);
@@ -79,7 +91,7 @@ const HomePage = () => {
     } finally {
       setLoadingMore(false);
     }
-  }, [page, totalPages, loadingMore]);
+  }, [page, totalPages, loadingMore, level]);
 
   const isFavorite = useCallback(
     (workoutId) => favorites.includes(workoutId),
@@ -124,6 +136,9 @@ const HomePage = () => {
     <div className="home-page">
       <h1 className="home-page__title">Тренировки</h1>
 
+      {/* Отдельная панель фильтрации по уровню под заголовком */}
+      <LevelFilterBar />
+
       {workouts.length === 0 ? (
         <p className="home-page__empty">Пока нет доступных тренировок.</p>
       ) : (
@@ -141,14 +156,14 @@ const HomePage = () => {
           </div>
 
           {page < totalPages && (
-           <button
-  type="button"
-  className="btn btn-primary home-page__load-more"
-  onClick={handleLoadMore}
-  disabled={loadingMore}
->
-  {loadingMore ? 'Загрузка…' : 'Показать ещё'}
-</button>
+            <button
+              type="button"
+              className="btn btn-primary home-page__load-more"
+              onClick={handleLoadMore}
+              disabled={loadingMore}
+            >
+              {loadingMore ? 'Загрузка…' : 'Показать ещё'}
+            </button>
           )}
         </>
       )}
